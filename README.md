@@ -117,6 +117,10 @@ The server fetches documentation directly from the official FastAPI website:
 3. **Smart extraction** — Extracts readable content from HTML pages
 4. **Keyword aliases** — Maps common terms (e.g., "auth" → "security")
 
+## Content Limits
+
+To keep responses fast and avoid overloading AI context windows, documentation content is truncated to a maximum length (currently **15,000 characters**). If a page exceeds that limit, the response ends with a truncation notice and a link to the full page.
+
 ## License
 
 MIT
