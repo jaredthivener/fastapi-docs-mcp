@@ -72,6 +72,33 @@ Add to `.vscode/mcp.json` in your workspace:
 }
 ```
 
+### With Docker
+
+Build the image locally:
+
+```bash
+docker build -t fastapi-docs-mcp .
+```
+
+Then use this MCP server config:
+
+```json
+{
+  "servers": {
+    "fastapi-docs": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "fastapi-docs-mcp"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
 ### Standalone
 
 ```bash
