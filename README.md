@@ -32,6 +32,17 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that 
 | `get_fastapi_example(topic)` | Get just the code examples, no prose |
 | `compare_fastapi_approaches(topic)` | Compare different approaches side-by-side |
 
+## Examples
+
+Once connected, ask your AI assistant:
+
+- "How do I set up CORS in FastAPI?"
+- "Show me the FastAPI security documentation"
+- "What are FastAPI dependencies?"
+- "List all FastAPI tutorial pages"
+- "Give me a code example for JWT authentication"
+- "Compare sync vs async in FastAPI"
+
 ## Installation
 
 ```bash
@@ -104,17 +115,6 @@ Then use this MCP server config:
 ```bash
 uv run python main.py
 ```
-
-## Examples
-
-Once connected, ask your AI assistant:
-
-- "How do I set up CORS in FastAPI?"
-- "Show me the FastAPI security documentation"
-- "What are FastAPI dependencies?"
-- "List all FastAPI tutorial pages"
-- "Give me a code example for JWT authentication"
-- "Compare sync vs async in FastAPI"
 
 ## Development
 
