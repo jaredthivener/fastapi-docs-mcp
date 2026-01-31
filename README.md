@@ -7,17 +7,11 @@
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml" target="_blank">
     <img src="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml/badge.svg?event=push&branch=main" alt="Test">
 </a>
-<a href="https://codecov.io/gh/jaredthivener/fastapi-docs-mcp" target="_blank">
-    <img src="https://codecov.io/gh/jaredthivener/fastapi-docs-mcp/branch/main/graph/badge.svg" alt="Coverage">
-</a>
-<a href="https://pypi.org/project/fastapi-docs-mcp" target="_blank">
-    <img src="https://img.shields.io/pypi/v/fastapi-docs-mcp?color=%2334D058&label=pypi%20package" alt="Package version">
-</a>
-<a href="https://pypi.org/project/fastapi-docs-mcp" target="_blank">
-    <img src="https://img.shields.io/pypi/pyversions/fastapi-docs-mcp.svg?color=%2334D058" alt="Supported Python versions">
-</a>
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp/blob/main/LICENSE" target="_blank">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+</a>
+<a href="https://github.com/jaredthivener/fastapi-docs-mcp" target="_blank">
+    <img src="https://img.shields.io/badge/python-3.13%2B-blue.svg" alt="Python 3.13+">
 </a>
 </p>
 
