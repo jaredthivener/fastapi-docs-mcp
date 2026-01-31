@@ -1,4 +1,4 @@
-# FastAPI Docs MCP Server
+<h1 align="center">🐍 FastAPI Docs MCP Server 🤖</h1>
 
 <p align="center">
     <em>Real-time FastAPI documentation access for AI assistants</em>
