@@ -46,7 +46,7 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that 
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/fastapi-docs-mcp.git
+git clone https://github.com/jaredthivener/fastapi-docs-mcp.git
 cd fastapi-docs-mcp
 uv sync
 ```
