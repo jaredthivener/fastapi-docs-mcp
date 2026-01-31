@@ -8,3 +8,22 @@ wheels/
 
 # Virtual environments
 .venv
+
+# uv
+.uv
+
+# Testing and linting
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.idea/
+
+# OS
+.DS_Store
+
+# Environment
+.env
