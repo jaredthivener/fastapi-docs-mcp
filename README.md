@@ -5,6 +5,7 @@
 </p>
 <p align="center">
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml" target="_blank"><img src="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml/badge.svg?event=push&branch=main" alt="Test"></a>
+<a href="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/codeql.yml" target="_blank"><img src="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp" target="_blank"><img src="https://img.shields.io/badge/python-3.13%2B-blue.svg" alt="Python 3.13+"></a>
 </p>
