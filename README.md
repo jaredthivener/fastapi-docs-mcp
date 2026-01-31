@@ -1,5 +1,28 @@
 # FastAPI Docs MCP Server
 
+<p align="center">
+    <em>Real-time FastAPI documentation access for AI assistants</em>
+</p>
+<p align="center">
+<a href="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml" target="_blank">
+    <img src="https://github.com/jaredthivener/fastapi-docs-mcp/actions/workflows/test.yml/badge.svg?event=push&branch=main" alt="Test">
+</a>
+<a href="https://codecov.io/gh/jaredthivener/fastapi-docs-mcp" target="_blank">
+    <img src="https://codecov.io/gh/jaredthivener/fastapi-docs-mcp/branch/main/graph/badge.svg" alt="Coverage">
+</a>
+<a href="https://pypi.org/project/fastapi-docs-mcp" target="_blank">
+    <img src="https://img.shields.io/pypi/v/fastapi-docs-mcp?color=%2334D058&label=pypi%20package" alt="Package version">
+</a>
+<a href="https://pypi.org/project/fastapi-docs-mcp" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/fastapi-docs-mcp.svg?color=%2334D058" alt="Supported Python versions">
+</a>
+<a href="https://github.com/jaredthivener/fastapi-docs-mcp/blob/main/LICENSE" target="_blank">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+</a>
+</p>
+
+---
+
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that provides real-time access to [FastAPI](https://fastapi.tiangolo.com/) documentation. Use it with Claude, GitHub Copilot, or any MCP-compatible client to instantly query FastAPI docs.
 
 ## Features
@@ -7,7 +30,8 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that 
 - **Real-time documentation** — Fetches directly from fastapi.tiangolo.com
 - **Smart search** — Find docs by keyword with common alias support
 - **Full sitemap access** — Browse all available documentation pages
-- **Zero configuration** — Works out of the box
+- **Code examples** — Get just the code, no prose
+- **Compare approaches** — Side-by-side comparisons of different patterns
 
 ## Tools
 
