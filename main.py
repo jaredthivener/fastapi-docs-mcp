@@ -632,7 +632,8 @@ async def compare_fastapi_approaches(topic: str) -> str:
     title = str(comparison["title"])
     description = str(comparison["description"])
     pages = comparison["pages"]
-    assert isinstance(pages, list)
+    if not isinstance(pages, list):
+        raise TypeError(f"Expected 'pages' to be a list, got {type(pages).__name__}")
 
     lines = [
         f"## {title}\n",
