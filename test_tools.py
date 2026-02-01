@@ -5,6 +5,7 @@ import asyncio
 
 from main import (
     compare_fastapi_approaches,
+    get_fastapi_best_practices,
     get_fastapi_docs,
     get_fastapi_example,
     list_fastapi_pages,
@@ -52,8 +53,15 @@ async def test_tools() -> None:
     print(result[:800] + "..." if len(result) > 800 else result)
     print("\nPASSED\n")
 
+    # Test 6: get_fastapi_best_practices (NEW)
+    print("[Test 6] get_fastapi_best_practices('security')")
+    print("-" * 40)
+    result = await get_fastapi_best_practices.fn("security")
+    print(result[:800] + "..." if len(result) > 800 else result)
+    print("\nPASSED\n")
+
     print("=" * 60)
-    print("All 5 tools working correctly!")
+    print("All 6 tools working correctly!")
     print("=" * 60)
 
 

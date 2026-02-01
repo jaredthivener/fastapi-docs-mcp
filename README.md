@@ -31,6 +31,7 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that 
 | `list_fastapi_pages()` | List all available documentation pages |
 | `get_fastapi_example(topic)` | Get just the code examples, no prose |
 | `compare_fastapi_approaches(topic)` | Compare different approaches side-by-side |
+| `get_fastapi_best_practices(topic)` | Get combined best practices from multiple pages |
 
 ## Examples
 
@@ -42,6 +43,7 @@ Once connected, ask your AI assistant:
 - "List all FastAPI tutorial pages"
 - "Give me a code example for JWT authentication"
 - "Compare sync vs async in FastAPI"
+- "What are the best practices for testing in FastAPI?"
 
 ## Installation
 

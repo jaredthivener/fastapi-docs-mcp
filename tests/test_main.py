@@ -8,6 +8,7 @@ from main import (
     extract_text_from_html,
     fetch_sitemap,
     fetch_url,
+    get_fastapi_best_practices,
     get_fastapi_docs,
     get_fastapi_example,
     list_fastapi_pages,
@@ -235,3 +236,26 @@ class TestCompareFastapiApproaches:
         result = await compare_fastapi_approaches.fn("unknown-topic")
         assert "Available comparisons" in result
         assert "sync-async" in result
+
+
+class TestGetFastapiBestPractices:
+    """Tests for the get_fastapi_best_practices tool."""
+
+    async def test_gets_security_practices(self) -> None:
+        """Should get security best practices."""
+        result = await get_fastapi_best_practices.fn("security")
+        assert "Best Practices" in result
+        assert "security" in result.lower()
+        assert BASE_URL in result
+
+    async def test_gets_testing_practices(self) -> None:
+        """Should get testing best practices."""
+        result = await get_fastapi_best_practices.fn("testing")
+        assert "Best Practices" in result
+        assert "test" in result.lower()
+
+    async def test_handles_unknown_topic(self) -> None:
+        """Should return helpful message for unknown topic."""
+        result = await get_fastapi_best_practices.fn("xyznonexistent123")
+        assert "No documentation found" in result
+        assert "list_fastapi_pages" in result

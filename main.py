@@ -673,5 +673,66 @@ async def compare_fastapi_approaches(topic: str) -> str:
     return "\n".join(lines)
 
 
+@mcp.tool
+async def get_fastapi_best_practices(topic: str) -> str:
+    """
+    Get FastAPI best practices for a topic by fetching all relevant documentation.
+
+    Searches the sitemap dynamically and returns combined content from
+    multiple matching pages.
+
+    Args:
+        topic: The topic to get best practices for (e.g., "security",
+               "testing", "database", "dependencies", "middleware").
+
+    Returns:
+        Combined content from all relevant documentation pages.
+    """
+    topic_lower = topic.lower().strip()
+
+    urls = await fetch_sitemap()
+    if not urls:
+        return f"Could not fetch documentation. Browse at: {BASE_URL}"
+
+    # Find all pages matching the topic
+    matching = [
+        url.replace(BASE_URL, "").strip("/")
+        for url in urls
+        if topic_lower in url.lower()
+    ]
+
+    if not matching:
+        return f"""No documentation found for '{topic}'.
+
+Use `list_fastapi_pages()` to see available topics."""
+
+    lines = [f"## Best Practices: {topic.title()}\n"]
+    lines.append(f"*Found {len(matching)} relevant page(s)*\n\n---\n")
+
+    # Fetch top pages (limit to avoid huge responses)
+    for path in matching[:3]:
+        url = f"{BASE_URL}/{path}/"
+        html = await fetch_url(url)
+        if not html:
+            continue
+
+        title_match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.IGNORECASE)
+        title = extract_text_from_html(title_match.group(1)) if title_match else path
+
+        content = extract_text_from_html(html)
+        content = truncate_content(content, max_length=4000)
+
+        lines.append(f"### {title}")
+        lines.append(f"**URL**: {url}\n")
+        lines.append(content)
+        lines.append("\n---\n")
+
+    if len(matching) > 3:
+        more = ", ".join(f"`{p}`" for p in matching[3:8])
+        lines.append(f"**More pages:** {more}")
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     mcp.run()
