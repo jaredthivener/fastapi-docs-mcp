@@ -10,6 +10,10 @@
 <a href="https://github.com/jaredthivener/fastapi-docs-mcp" target="_blank"><img src="https://img.shields.io/badge/python-3.13%2B-blue.svg" alt="Python 3.13+"></a>
 </p>
 
+<p align="center">
+  <img src="docs/BA35AD71-62DA-4C12-A605-21F9F48D72BA.PNG" alt="FastAPI Docs MCP Server hero" width="640">
+</p>
+
 ---
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that provides real-time access to [FastAPI](https://fastapi.tiangolo.com/) documentation. Use it with Claude, GitHub Copilot, or any MCP-compatible client to instantly query FastAPI docs.
