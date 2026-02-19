@@ -7,7 +7,10 @@ enabling users to search, browse, and learn FastAPI concepts efficiently.
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import re
+import time
 from typing import TYPE_CHECKING
 
 import httpx
@@ -16,14 +19,84 @@ from fastmcp import FastMCP
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+logger = logging.getLogger(__name__)
+
 # Constants
 BASE_URL = "https://fastapi.tiangolo.com"
 SITEMAP_URL = f"{BASE_URL}/sitemap.xml"
 REQUEST_TIMEOUT = 30.0
 MAX_CONTENT_LENGTH = 15_000
 
+# Simple async-compatible TTL cache (no external dependencies)
+_cache: dict[str, tuple[float, str]] = {}
+_CACHE_TTL: float = 300.0  # 5 minutes
+
+# HTML entity mapping for decoding
+_HTML_ENTITIES: dict[str, str] = {
+    "&lt;": "<",
+    "&gt;": ">",
+    "&amp;": "&",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&nbsp;": " ",
+    "&para;": "",
+    "&sect;": "",
+    "&apos;": "'",
+}
+
+# Keyword aliases for search — maps synonyms to URL search terms.
+# These are vocabulary mappings, NOT hardcoded paths — they work as long
+# as the search term appears somewhere in the sitemap URLs.
+_KEYWORD_ALIASES: dict[str, str] = {
+    "auth": "security",
+    "login": "security",
+    "oauth": "security",
+    "jwt": "security",
+    "token": "security",  # nosec B105
+    "password": "security",  # nosec B105
+    "db": "sql-databases",
+    "database": "sql-databases",
+    "sqlalchemy": "sql-databases",
+    "postgres": "sql-databases",
+    "mysql": "sql-databases",
+    "websocket": "websockets",
+    "ws": "websockets",
+    "realtime": "websockets",
+    "start": "first-steps",
+    "begin": "first-steps",
+    "hello": "first-steps",
+    "getting started": "first-steps",
+    "di": "dependencies",
+    "dependency": "dependencies",
+    "inject": "dependencies",
+    "dependency injection": "dependencies",
+    "background": "background-tasks",
+    "tasks": "background-tasks",
+    "test": "testing",
+    "exception": "handling-errors",
+    "pydantic": "body",
+    "upload": "request-files",
+}
+
 # Initialize MCP server
 mcp = FastMCP("FastAPI-Docs-Expert")
+
+
+def _cache_get(key: str) -> str | None:
+    """Return cached value if it exists and hasn't expired."""
+    entry = _cache.get(key)
+    if entry is None:
+        return None
+    ts, value = entry
+    if time.monotonic() - ts > _CACHE_TTL:
+        del _cache[key]
+        return None
+    return value
+
+
+def _cache_set(key: str, value: str) -> None:
+    """Store a value in the cache with the current timestamp."""
+    _cache[key] = (time.monotonic(), value)
 
 
 async def fetch_url(url: str) -> str | None:
@@ -36,6 +109,10 @@ async def fetch_url(url: str) -> str | None:
     Returns:
         The response text if successful, None otherwise.
     """
+    cached = _cache_get(url)
+    if cached is not None:
+        return cached
+
     async with httpx.AsyncClient(
         follow_redirects=True,
         timeout=REQUEST_TIMEOUT,
@@ -43,9 +120,32 @@ async def fetch_url(url: str) -> str | None:
         try:
             response = await client.get(url)
             response.raise_for_status()
+            _cache_set(url, response.text)
             return response.text
-        except httpx.HTTPError:
+        except httpx.TimeoutException:
+            logger.warning("Timeout fetching %s", url)
             return None
+        except httpx.HTTPStatusError as exc:
+            logger.warning("HTTP %d fetching %s", exc.response.status_code, url)
+            return None
+        except httpx.HTTPError as exc:
+            logger.warning("HTTP error fetching %s: %s", url, exc)
+            return None
+
+
+def decode_html_entities(text: str) -> str:
+    """
+    Decode common HTML entities in text.
+
+    Args:
+        text: Text potentially containing HTML entities.
+
+    Returns:
+        Text with HTML entities decoded.
+    """
+    for entity, char in _HTML_ENTITIES.items():
+        text = text.replace(entity, char)
+    return text
 
 
 def extract_text_from_html(html: str) -> str:
@@ -89,19 +189,7 @@ def extract_text_from_html(html: str) -> str:
         html = re.sub(r"<[a-zA-Z/][^>]*>", "", html)
 
     # Decode common HTML entities AFTER removing tags
-    entity_map = {
-        "&lt;": "<",
-        "&gt;": ">",
-        "&amp;": "&",
-        "&quot;": '"',
-        "&#39;": "'",
-        "&nbsp;": " ",
-        "&para;": "",
-        "&sect;": "",
-        "&apos;": "'",
-    }
-    for entity, char in entity_map.items():
-        html = html.replace(entity, char)
+    html = decode_html_entities(html)
 
     # Clean up artifacts from malformed HTML
     html = re.sub(r"\s*>\s*", " ", html)
@@ -126,6 +214,41 @@ async def fetch_sitemap() -> list[str]:
         return []
 
     return re.findall(r"<loc>([^<]+)</loc>", content)
+
+
+async def _search_sitemap_urls(query: str) -> list[str]:
+    """
+    Search sitemap URLs for a query, using keyword aliases as fallback.
+
+    Args:
+        query: The search term.
+
+    Returns:
+        List of matching documentation paths (without BASE_URL prefix).
+    """
+    query_lower = query.lower().strip()
+    urls = await fetch_sitemap()
+    if not urls:
+        return []
+
+    # Direct search
+    matching = [
+        url.replace(BASE_URL, "").strip("/")
+        for url in urls
+        if query_lower in url.lower()
+    ]
+    if matching:
+        return matching
+
+    # Try keyword alias
+    mapped = _KEYWORD_ALIASES.get(query_lower, query_lower)
+    if mapped != query_lower:
+        matching = [
+            url.replace(BASE_URL, "").strip("/")
+            for url in urls
+            if mapped in url.lower()
+        ]
+    return matching
 
 
 def categorize_urls(urls: Sequence[str]) -> dict[str, list[str]]:
@@ -244,51 +367,7 @@ async def search_fastapi_docs(query: str) -> str:
     Returns:
         Documentation content for the best matching page.
     """
-    query_lower = query.lower().strip()
-
-    urls = await fetch_sitemap()
-    if not urls:
-        return f"Could not fetch documentation. Browse at: {BASE_URL}"
-
-    # Search for paths containing the query
-    matching_paths = [
-        url.replace(BASE_URL, "").strip("/")
-        for url in urls
-        if query_lower in url.lower()
-    ]
-
-    # Try keyword aliases if no direct match
-    if not matching_paths:
-        keyword_aliases = {
-            "auth": "security",
-            "login": "security",
-            "oauth": "security",
-            "jwt": "security",
-            "token": "security",
-            "password": "security",
-            "database": "sql-databases",
-            "db": "sql-databases",
-            "sqlalchemy": "sql-databases",
-            "postgres": "sql-databases",
-            "mysql": "sql-databases",
-            "websocket": "websockets",
-            "ws": "websockets",
-            "realtime": "websockets",
-            "start": "first-steps",
-            "begin": "first-steps",
-            "hello": "first-steps",
-            "getting started": "first-steps",
-            "di": "dependencies",
-            "inject": "dependencies",
-            "dependency injection": "dependencies",
-        }
-
-        mapped_term = keyword_aliases.get(query_lower, query_lower)
-        matching_paths = [
-            url.replace(BASE_URL, "").strip("/")
-            for url in urls
-            if mapped_term in url.lower()
-        ]
+    matching_paths = await _search_sitemap_urls(query)
 
     if not matching_paths:
         return f"""No results for '{query}'.
@@ -403,9 +482,7 @@ def extract_code_blocks(html: str) -> list[str]:
         # Remove any HTML tags FIRST (before entity decoding)
         block = re.sub(r"<[a-zA-Z/][^>]*>", "", block)
         # Then decode HTML entities
-        block = block.replace("&lt;", "<").replace("&gt;", ">")
-        block = block.replace("&amp;", "&").replace("&quot;", '"')
-        block = block.replace("&#39;", "'").replace("&nbsp;", " ")
+        block = decode_html_entities(block)
         block = block.strip()
         if block and len(block) > 20:
             cleaned.append(block)
@@ -429,63 +506,15 @@ async def get_fastapi_example(topic: str) -> str:
     """
     topic_lower = topic.lower().strip()
 
-    # Map common terms to documentation paths
-    topic_paths = {
-        "cors": "tutorial/cors",
-        "dependencies": "tutorial/dependencies",
-        "dependency": "tutorial/dependencies",
-        "di": "tutorial/dependencies",
-        "security": "tutorial/security",
-        "auth": "tutorial/security",
-        "oauth": "tutorial/security/oauth2-jwt",
-        "jwt": "tutorial/security/oauth2-jwt",
-        "token": "tutorial/security/oauth2-jwt",
-        "websocket": "advanced/websockets",
-        "websockets": "advanced/websockets",
-        "ws": "advanced/websockets",
-        "middleware": "tutorial/middleware",
-        "background": "tutorial/background-tasks",
-        "background-tasks": "tutorial/background-tasks",
-        "tasks": "tutorial/background-tasks",
-        "testing": "tutorial/testing",
-        "test": "tutorial/testing",
-        "database": "tutorial/sql-databases",
-        "sql": "tutorial/sql-databases",
-        "sqlalchemy": "tutorial/sql-databases",
-        "error": "tutorial/handling-errors",
-        "exception": "tutorial/handling-errors",
-        "validation": "tutorial/body-fields",
-        "pydantic": "tutorial/body",
-        "body": "tutorial/body",
-        "query": "tutorial/query-params",
-        "path": "tutorial/path-params",
-        "header": "tutorial/header-params",
-        "cookie": "tutorial/cookie-params",
-        "form": "tutorial/request-forms",
-        "file": "tutorial/request-files",
-        "upload": "tutorial/request-files",
-        "response": "tutorial/response-model",
-        "first": "tutorial/first-steps",
-        "start": "tutorial/first-steps",
-        "hello": "tutorial/first-steps",
-    }
+    # Search sitemap dynamically (no hardcoded paths)
+    matching_paths = await _search_sitemap_urls(topic_lower)
 
-    # Find the path for this topic
-    doc_path = topic_paths.get(topic_lower)
-
-    if not doc_path:
-        # Try to find it in the sitemap
-        urls = await fetch_sitemap()
-        for url in urls:
-            if topic_lower in url.lower():
-                doc_path = url.replace(BASE_URL, "").strip("/")
-                break
-
-    if not doc_path:
+    if not matching_paths:
         return f"""No examples found for '{topic}'.
 
 Try: cors, dependencies, jwt, websockets, middleware, testing, database"""
 
+    doc_path = matching_paths[0]
     url = f"{BASE_URL}/{doc_path}/"
     html = await fetch_url(url)
 
@@ -632,7 +661,7 @@ async def compare_fastapi_approaches(topic: str) -> str:
     title = str(comparison["title"])
     description = str(comparison["description"])
     pages = comparison["pages"]
-    if not isinstance(pages, list):
+    if not isinstance(pages, list):  # pragma: no cover
         raise TypeError(f"Expected 'pages' to be a list, got {type(pages).__name__}")
 
     lines = [
@@ -641,10 +670,11 @@ async def compare_fastapi_approaches(topic: str) -> str:
         "---\n",
     ]
 
-    for page in pages:
-        url = f"{BASE_URL}/{page}/"
-        html = await fetch_url(url)
+    # Fetch all pages in parallel
+    page_urls = [f"{BASE_URL}/{page}/" for page in pages]
+    results = await asyncio.gather(*(fetch_url(url) for url in page_urls))
 
+    for page, url, html in zip(pages, page_urls, results, strict=True):
         if not html:
             continue
 
@@ -709,10 +739,12 @@ Use `list_fastapi_pages()` to see available topics."""
     lines = [f"## Best Practices: {topic.title()}\n"]
     lines.append(f"*Found {len(matching)} relevant page(s)*\n\n---\n")
 
-    # Fetch top pages (limit to avoid huge responses)
-    for path in matching[:3]:
-        url = f"{BASE_URL}/{path}/"
-        html = await fetch_url(url)
+    # Fetch top pages in parallel (limit to avoid huge responses)
+    selected_paths = matching[:3]
+    page_urls = [f"{BASE_URL}/{path}/" for path in selected_paths]
+    results = await asyncio.gather(*(fetch_url(url) for url in page_urls))
+
+    for path, url, html in zip(selected_paths, page_urls, results, strict=True):
         if not html:
             continue
 
@@ -734,5 +766,5 @@ Use `list_fastapi_pages()` to see available topics."""
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     mcp.run()
