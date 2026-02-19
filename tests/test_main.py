@@ -142,13 +142,13 @@ class TestGetFastapiDocs:
     async def test_fetches_valid_page(self) -> None:
         """Should fetch documentation for a valid path."""
         # Access the underlying function via .fn attribute
-        result = await get_fastapi_docs.fn("tutorial/first-steps")
+        result = await get_fastapi_docs("tutorial/first-steps")
         assert "FastAPI" in result
         assert "tutorial/first-steps" in result
 
     async def test_handles_invalid_page(self) -> None:
         """Should return helpful message for invalid paths."""
-        result = await get_fastapi_docs.fn("nonexistent/page")
+        result = await get_fastapi_docs("nonexistent/page")
         assert "Could not find" in result or "list_fastapi_pages" in result
 
 
@@ -157,18 +157,18 @@ class TestSearchFastapiDocs:
 
     async def test_finds_direct_match(self) -> None:
         """Should find pages matching the search term."""
-        result = await search_fastapi_docs.fn("cors")
+        result = await search_fastapi_docs("cors")
         assert "cors" in result.lower()
         assert BASE_URL in result
 
     async def test_uses_keyword_aliases(self) -> None:
         """Should use keyword aliases for common terms."""
-        result = await search_fastapi_docs.fn("auth")
+        result = await search_fastapi_docs("auth")
         assert "security" in result.lower()
 
     async def test_handles_no_results(self) -> None:
         """Should return helpful message when no results found."""
-        result = await search_fastapi_docs.fn("xyznonexistent123")
+        result = await search_fastapi_docs("xyznonexistent123")
         assert "No results" in result or "list_fastapi_pages" in result
 
 
@@ -177,14 +177,14 @@ class TestListFastapiPages:
 
     async def test_lists_pages(self) -> None:
         """Should list documentation pages."""
-        result = await list_fastapi_pages.fn()
+        result = await list_fastapi_pages()
         assert "Tutorial" in result
         assert "Advanced" in result
         assert "Total pages" in result
 
     async def test_includes_paths(self) -> None:
         """Should include actual page paths."""
-        result = await list_fastapi_pages.fn()
+        result = await list_fastapi_pages()
         assert "tutorial/" in result
 
 
@@ -211,19 +211,19 @@ class TestGetFastapiExample:
 
     async def test_gets_cors_example(self) -> None:
         """Should get code examples for CORS."""
-        result = await get_fastapi_example.fn("cors")
+        result = await get_fastapi_example("cors")
         assert "```python" in result
         assert "CORS" in result or "cors" in result.lower()
 
     async def test_gets_dependencies_example(self) -> None:
         """Should get code examples for dependencies."""
-        result = await get_fastapi_example.fn("dependencies")
+        result = await get_fastapi_example("dependencies")
         assert "```python" in result
         assert "Example" in result
 
     async def test_handles_unknown_topic(self) -> None:
         """Should return helpful message for unknown topics."""
-        result = await get_fastapi_example.fn("xyznonexistent")
+        result = await get_fastapi_example("xyznonexistent")
         assert "No examples found" in result or "Try:" in result
 
 
@@ -232,18 +232,18 @@ class TestCompareFastapiApproaches:
 
     async def test_compares_auth_methods(self) -> None:
         """Should compare authentication methods."""
-        result = await compare_fastapi_approaches.fn("auth-methods")
+        result = await compare_fastapi_approaches("auth-methods")
         assert "Authentication" in result
         assert "```python" in result
 
     async def test_compares_sync_async(self) -> None:
         """Should compare sync vs async."""
-        result = await compare_fastapi_approaches.fn("sync-async")
+        result = await compare_fastapi_approaches("sync-async")
         assert "Async" in result or "async" in result
 
     async def test_handles_unknown_comparison(self) -> None:
         """Should return available comparisons for unknown topic."""
-        result = await compare_fastapi_approaches.fn("unknown-topic")
+        result = await compare_fastapi_approaches("unknown-topic")
         assert "Available comparisons" in result
         assert "sync-async" in result
 
@@ -253,20 +253,20 @@ class TestGetFastapiBestPractices:
 
     async def test_gets_security_practices(self) -> None:
         """Should get security best practices."""
-        result = await get_fastapi_best_practices.fn("security")
+        result = await get_fastapi_best_practices("security")
         assert "Best Practices" in result
         assert "security" in result.lower()
         assert BASE_URL in result
 
     async def test_gets_testing_practices(self) -> None:
         """Should get testing best practices."""
-        result = await get_fastapi_best_practices.fn("testing")
+        result = await get_fastapi_best_practices("testing")
         assert "Best Practices" in result
         assert "test" in result.lower()
 
     async def test_handles_unknown_topic(self) -> None:
         """Should return helpful message for unknown topic."""
-        result = await get_fastapi_best_practices.fn("xyznonexistent123")
+        result = await get_fastapi_best_practices("xyznonexistent123")
         assert "No documentation found" in result
         assert "list_fastapi_pages" in result
 
@@ -422,7 +422,7 @@ class TestSearchFastapiDocsMocked:
             ),
             patch("main.fetch_url", new_callable=AsyncMock, return_value=None),
         ):
-            result = await search_fastapi_docs.fn("cors")
+            result = await search_fastapi_docs("cors")
             assert "Found" in result
             assert "could not fetch" in result
 
@@ -433,7 +433,7 @@ class TestListFastapiPagesMocked:
     async def test_empty_sitemap(self) -> None:
         """Should return browse message when sitemap is empty."""
         with patch("main.fetch_sitemap", new_callable=AsyncMock, return_value=[]):
-            result = await list_fastapi_pages.fn()
+            result = await list_fastapi_pages()
             assert "Could not fetch sitemap" in result
             assert BASE_URL in result
 
@@ -444,7 +444,7 @@ class TestListFastapiPagesMocked:
         with patch(
             "main.fetch_sitemap", new_callable=AsyncMock, return_value=fake_urls
         ):
-            result = await list_fastapi_pages.fn()
+            result = await list_fastapi_pages()
             assert "Tutorial" in result
             assert "Total pages" in result
 
@@ -462,7 +462,7 @@ class TestGetFastapiExampleMocked:
             ),
             patch("main.fetch_url", new_callable=AsyncMock, return_value=None),
         ):
-            result = await get_fastapi_example.fn("cors")
+            result = await get_fastapi_example("cors")
             assert "Could not fetch" in result
 
     async def test_no_code_blocks(self) -> None:
@@ -476,7 +476,7 @@ class TestGetFastapiExampleMocked:
             ),
             patch("main.fetch_url", new_callable=AsyncMock, return_value=html_no_code),
         ):
-            result = await get_fastapi_example.fn("cors")
+            result = await get_fastapi_example("cors")
             assert "No code examples" in result
 
 
@@ -486,7 +486,7 @@ class TestCompareFastapiApproachesMocked:
     async def test_page_fetch_failure_skipped(self) -> None:
         """Should skip pages that fail to fetch."""
         with patch("main.fetch_url", new_callable=AsyncMock, return_value=None):
-            result = await compare_fastapi_approaches.fn("sync-async")
+            result = await compare_fastapi_approaches("sync-async")
             # Should still return header content even if all pages fail
             assert "Sync vs Async" in result
 
@@ -497,7 +497,7 @@ class TestGetFastapiBestPracticesMocked:
     async def test_empty_sitemap(self) -> None:
         """Should return browse message when sitemap fails."""
         with patch("main.fetch_sitemap", new_callable=AsyncMock, return_value=[]):
-            result = await get_fastapi_best_practices.fn("security")
+            result = await get_fastapi_best_practices("security")
             assert "Could not fetch documentation" in result
             assert BASE_URL in result
 
@@ -508,5 +508,5 @@ class TestGetFastapiBestPracticesMocked:
             patch("main.fetch_sitemap", new_callable=AsyncMock, return_value=fake_urls),
             patch("main.fetch_url", new_callable=AsyncMock, return_value=None),
         ):
-            result = await get_fastapi_best_practices.fn("security")
+            result = await get_fastapi_best_practices("security")
             assert "Best Practices" in result
