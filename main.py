@@ -724,11 +724,14 @@ async def get_fastapi_best_practices(topic: str) -> str:
     if not urls:
         return f"Could not fetch documentation. Browse at: {BASE_URL}"
 
-    # Find all pages matching the topic
+    # Find all pages matching the topic, prioritized by section
+    categories = categorize_urls(urls)
+    priority_order = ["tutorial", "advanced", "how-to", "reference", "other"]
     matching = [
-        url.replace(BASE_URL, "").strip("/")
-        for url in urls
-        if topic_lower in url.lower()
+        path
+        for cat in priority_order
+        for path in categories.get(cat, [])
+        if topic_lower in path.lower()
     ]
 
     if not matching:
