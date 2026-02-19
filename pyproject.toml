@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp>=2.0.0",
+    "fastmcp>=3.0.0",
     "httpx>=0.25.0",
 ]
 
