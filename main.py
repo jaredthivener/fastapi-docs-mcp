@@ -52,8 +52,8 @@ _KEYWORD_ALIASES: dict[str, str] = {
     "login": "security",
     "oauth": "security",
     "jwt": "security",
-    "token": "security",
-    "password": "security",
+    "token": "security",  # nosec B105 - dict key, not a hardcoded credential
+    "password": "security",  # nosec B105 - dict key, not a hardcoded credential
     "db": "sql-databases",
     "database": "sql-databases",
     "sqlalchemy": "sql-databases",

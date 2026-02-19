@@ -74,4 +74,4 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.bandit]
-skips = ["B105"]  # B105 flags dict values matching password-like names; false positive here
+# No global skips — B105 false positives are suppressed inline with # nosec B105
