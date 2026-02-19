@@ -41,7 +41,7 @@ The entire application is a single-file async tool server (`main.py`). Focus is 
 ### Code Quality (Enforced by CI/CD)
 - **Ruff**: `uv run ruff check .` (linting) + `uv run ruff format .` (formatting)
 - **Type checking**: `uv run mypy main.py` (strict typing required)
-- **Security**: `uv run bandit main.py` (no external SSTI exploits)
+- **Security**: `uv run bandit -c pyproject.toml main.py` (no external SSTI exploits)
 - **Config**: Set target Python 3.13+ in `pyproject.toml` — do NOT add Python 3.12 support
 
 ## Contributing Guidelines

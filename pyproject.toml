@@ -72,3 +72,6 @@ strict = true
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+
+[tool.bandit]
+skips = ["B105"]  # B105 flags dict values matching password-like names; false positive here

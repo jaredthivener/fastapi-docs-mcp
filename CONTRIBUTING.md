@@ -11,7 +11,7 @@ Before your PR can be merged, it must pass all automated checks:
 - ✅ **Type checking** — `uv run mypy main.py`
 - ✅ **Tests** — `uv run pytest` (Python 3.13 and 3.14)
 - ✅ **Security** — CodeQL analysis
-- ✅ **Security (local)** — `uv run bandit main.py`
+- ✅ **Security (local)** — `uv run bandit -c pyproject.toml main.py`
 
 ## Development Setup
 
@@ -28,7 +28,7 @@ uv run ruff check .
 uv run ruff format .
 uv run mypy main.py --ignore-missing-imports
 uv run pytest
-uv run bandit main.py
+uv run bandit -c pyproject.toml main.py
 ```
 
 ## Pull Request Process
