@@ -18,18 +18,18 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp>=3.0.0",
-    "httpx>=0.25.0",
+    "fastmcp~=3.0",
+    "httpx~=0.28",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-cov>=4.0.0",
-    "bandit>=1.9.3",
-    "ruff>=0.4.0",
-    "mypy>=1.10.0",
+    "pytest~=8.0",
+    "pytest-asyncio~=0.23",
+    "pytest-cov~=4.0",
+    "bandit~=1.9",
+    "ruff~=0.4",
+    "mypy~=1.10",
 ]
 
 [build-system]
