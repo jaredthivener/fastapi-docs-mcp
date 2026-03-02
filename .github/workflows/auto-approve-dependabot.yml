@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Validate major update has human approval
         id: gate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const updateType = '${{ needs.metadata.outputs.update-type }}';
