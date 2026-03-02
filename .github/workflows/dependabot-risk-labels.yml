@@ -1,0 +1,92 @@
+name: Dependabot risk labels
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-risk-labels-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label-risk:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply risk labels
+        uses: actions/github-script@v7
+        env:
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_TYPE: ${{ steps.metadata.outputs.dependency-type }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const labelColors = {
+              'dependencies:risk:security': 'B60205',
+              'dependencies:risk:major': 'D93F0B',
+              'dependencies:risk:minor': 'FBCA04',
+              'dependencies:risk:patch': '0E8A16',
+              'dependencies:scope:production': '5319E7',
+              'dependencies:scope:development': 'C5DEF5'
+            };
+
+            const updateType = process.env.UPDATE_TYPE || '';
+            const dependencyType = process.env.DEPENDENCY_TYPE || '';
+            const labelsToAdd = [];
+
+            if (dependencyType.includes('production') || dependencyType === 'direct') {
+              labelsToAdd.push('dependencies:scope:production');
+            } else {
+              labelsToAdd.push('dependencies:scope:development');
+            }
+
+            if (updateType === 'security-update') {
+              labelsToAdd.push('dependencies:risk:security');
+            } else if (updateType === 'version-update:semver-major') {
+              labelsToAdd.push('dependencies:risk:major');
+            } else if (updateType === 'version-update:semver-minor') {
+              labelsToAdd.push('dependencies:risk:minor');
+            } else if (updateType === 'version-update:semver-patch') {
+              labelsToAdd.push('dependencies:risk:patch');
+            }
+
+            for (const name of labelsToAdd) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name,
+                  color: labelColors[name] || 'BFD4F2',
+                  description: 'Automated Dependabot classification label'
+                });
+              }
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: labelsToAdd
+              });
+            }

@@ -1,0 +1,114 @@
+name: Dependabot PR automation
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  metadata:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      dependency-type: ${{ steps.metadata.outputs.dependency-type }}
+      update-type: ${{ steps.metadata.outputs.update-type }}
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-approve:
+    needs: metadata
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Auto-approve Dependabot PR
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  major-review-gate:
+    needs: metadata
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      human-approved: ${{ steps.gate.outputs.human-approved }}
+    steps:
+      - name: Validate major update has human approval
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const updateType = '${{ needs.metadata.outputs.update-type }}';
+
+            if (updateType !== 'version-update:semver-major') {
+              core.setOutput('human-approved', 'true');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            const latestReviewStateByUser = new Map();
+            for (const review of reviews) {
+              const login = review.user?.login;
+              if (!login) {
+                continue;
+              }
+              latestReviewStateByUser.set(login, review.state);
+            }
+
+            const hasHumanApproval = Array.from(latestReviewStateByUser.entries()).some(
+              ([login, state]) => state === 'APPROVED' && !login.endsWith('[bot]'),
+            );
+
+            core.setOutput('human-approved', hasHumanApproval ? 'true' : 'false');
+
+  enable-automerge:
+    needs: [metadata, auto-approve, major-review-gate]
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      !github.event.pull_request.draft &&
+      contains(fromJSON('["direct:production", "direct"]'), needs.metadata.outputs.dependency-type) &&
+      (
+        contains(fromJSON('["version-update:semver-patch", "version-update:semver-minor", "security-update"]'), needs.metadata.outputs.update-type) ||
+        (
+          needs.metadata.outputs.update-type == 'version-update:semver-major' &&
+          needs.major-review-gate.outputs.human-approved == 'true'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Enable auto-merge after required checks pass
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
