@@ -26,7 +26,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply risk labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
           DEPENDENCY_TYPE: ${{ steps.metadata.outputs.dependency-type }}
