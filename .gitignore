@@ -27,3 +27,6 @@ htmlcov/
 
 # Environment
 .env
+
+# Local planning / task tracking
+tasks/
