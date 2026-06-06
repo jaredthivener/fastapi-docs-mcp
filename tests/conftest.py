@@ -1,13 +1,17 @@
 """Shared test fixtures."""
 
+from __future__ import annotations
+
+from collections.abc import Iterator
+
 import pytest
 
-from main import _cache
+from fastapi_docs_mcp import cache
 
 
 @pytest.fixture(autouse=True)
-def _clear_cache() -> None:  # type: ignore[misc]
-    """Clear the URL cache before and after each test."""
-    _cache.clear()
-    yield  # type: ignore[misc]
-    _cache.clear()
+def _clear_cache() -> Iterator[None]:
+    """Clear the URL cache (and in-flight locks) around each test."""
+    cache.clear()
+    yield
+    cache.clear()

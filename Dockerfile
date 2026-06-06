@@ -14,6 +14,7 @@ RUN curl -Ls https://astral.sh/uv/install.sh | sh
 COPY pyproject.toml /app/pyproject.toml
 COPY README.md /app/README.md
 COPY main.py /app/main.py
+COPY src /app/src
 
 RUN uv sync --no-dev
 

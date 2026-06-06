@@ -1,0 +1,33 @@
+{
+  "label": "before",
+  "tools": {
+    "get_fastapi_docs": {
+      "chars": 10729,
+      "tokens": 2644
+    },
+    "search_fastapi_docs": {
+      "chars": 5097,
+      "tokens": 1081
+    },
+    "list_fastapi_pages": {
+      "chars": 3300,
+      "tokens": 844
+    },
+    "get_fastapi_example": {
+      "chars": 574,
+      "tokens": 147
+    },
+    "compare_fastapi_approaches": {
+      "chars": 1837,
+      "tokens": 470
+    },
+    "get_fastapi_best_practices": {
+      "chars": 12282,
+      "tokens": 2753
+    }
+  },
+  "total": {
+    "chars": 33819,
+    "tokens": 7939
+  }
+}
