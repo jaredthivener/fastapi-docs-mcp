@@ -109,7 +109,10 @@ def _cap_code(code: str, max_lines: int = 18) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool(annotations=READONLY)
+# output_schema=None: FastMCP auto-wraps plain `-> str` returns in a generated
+# {"result": {"type": "string"}, ...} schema and ships it on every tool listing.
+# It adds ~14 tok/tool with no semantic value here, so we opt out explicitly.
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def get_fastapi_docs(path: str) -> str:
     """Fetch FastAPI documentation content for a page by its path.
 
@@ -130,7 +133,7 @@ async def get_fastapi_docs(path: str) -> str:
 Use `list_fastapi_pages()` to see all valid paths."""
 
 
-@mcp.tool(annotations=READONLY)
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def search_fastapi_docs(query: str) -> str:
     """Search the docs by keyword and return the best-matching page.
 
@@ -167,7 +170,7 @@ Use `list_fastapi_pages()` to see all available pages."""
     )
 
 
-@mcp.tool(annotations=READONLY)
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def list_fastapi_pages() -> str:
     """List all available FastAPI doc pages, categorized by section."""
     urls = await sitemap.fetch_sitemap()
@@ -201,7 +204,7 @@ async def list_fastapi_pages() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool(annotations=READONLY)
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def get_fastapi_example(topic: str) -> str:
     """Get code examples (no prose) for a FastAPI topic.
 
@@ -235,7 +238,7 @@ Try: cors, dependencies, jwt, websockets, middleware, testing, database"""
     return "\n".join(lines)
 
 
-@mcp.tool(annotations=READONLY)
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def compare_fastapi_approaches(topic: str) -> str:
     """Compare FastAPI approaches side-by-side (e.g. sync vs async, auth methods).
 
@@ -295,7 +298,7 @@ def _compare_help(topic: str) -> str:
 Or pass any topic to compare matching pages dynamically."""
 
 
-@mcp.tool(annotations=READONLY)
+@mcp.tool(annotations=READONLY, output_schema=None)
 async def get_fastapi_best_practices(topic: str) -> str:
     """Combine best-practice content from all doc pages matching a topic.
 

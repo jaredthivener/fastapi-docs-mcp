@@ -21,9 +21,11 @@ A single "ask → tool call → answer" round trip bills three things:
 | **Tool output** fed back to the model | input | **this server** (the optimization target) |
 | **Generation** — the model's synthesized answer | output | the task, not the tool |
 
-The server controls the first two. Tool definitions were trimmed to **411 tok**
-(≈ 493 Claude tok) and outputs cut **−8.2%** overall — see
-[`../bench/token-report.md`](../bench/token-report.md).
+The server controls the first two. The full `tools/list` wire payload — what's
+actually billed as fixed overhead — is **554 tok** (≈ 665 Claude tok) after trimming
+docstrings *and* opting out of FastMCP's auto-generated `outputSchema` wrapper
+(`output_schema=None`, −174 tok / −23.9% on top of the docstring win), and outputs are
+cut **−8.2%** overall — see [`../bench/token-report.md`](../bench/token-report.md).
 
 ## 2. Pricing & per-request overhead (official)
 
@@ -54,14 +56,15 @@ Output tokens (×1.2 Claude-adjusted) and the input cost of feeding that output 
 ## 4. Representative full round trip
 
 "Ask a question → one tool call → ~400-token answer." Fixed overhead = sys-prompt +
-~493 tok tool defs + ~30 tok question. Example tool: `search_fastapi_docs` (1,465 tok
-output). **First call** (cold cache) vs **cached** (tool defs + sys-prompt at 0.1×):
+~665 tok tool defs (554 × 1.2 Claude-adjusted) + ~30 tok question. Example tool:
+`search_fastapi_docs` (1,465 tok output). **First call** (cold cache) vs **cached**
+(tool defs + sys-prompt at 0.1×):
 
 | Model | Input tok | + Output | Cost / call (cold) | Cost / call (cached defs) |
 |---|---:|---:|---:|---:|
-| Opus 4.8 | ~2,278 | 400 | ~$0.0214 | ~$0.0175 |
-| Sonnet 4.6 | ~2,485 | 400 | ~$0.0135 | ~$0.0107 |
-| Haiku 4.5 | ~2,484 | 400 | **~$0.0045** | **~$0.0036** |
+| Opus 4.8 | ~2,450 | 400 | ~$0.0222 | ~$0.0178 |
+| Sonnet 4.6 | ~2,657 | 400 | ~$0.0140 | ~$0.0108 |
+| Haiku 4.5 | ~2,656 | 400 | **~$0.0047** | **~$0.0036** |
 
 Caching matters because this server keeps the tool list **byte-stable** (never mutated
 per request), so it's a clean cacheable prefix.

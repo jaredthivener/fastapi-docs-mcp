@@ -1,5 +1,5 @@
 {
-  "label": "latest",
+  "label": "after",
   "tools": {
     "get_fastapi_docs": {
       "chars": 10039,
