@@ -28,7 +28,7 @@ dev = [
     "pytest-asyncio~=1.4",
     "pytest-cov~=7.1",
     "bandit~=1.9",
-    "ruff~=0.15",
+    "ruff~=0.16",
     "mypy~=2.1",
 ]
 
