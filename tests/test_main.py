@@ -141,6 +141,36 @@ class TestCache:
         assert await cache.get_or_fetch("none-key", fetcher) is None
         assert "none-key" not in cache._cache
 
+    def test_expiry_cleans_locks(self) -> None:
+        # Verify that when a cache entry expires, its lock is also cleaned up
+        cache._cache["old"] = (time.monotonic() - 1_000_000, "stale")
+        cache._locks["old"] = asyncio.Lock()
+        assert "old" in cache._locks
+
+        # Access the expired entry (triggers cleanup)
+        assert cache.cache_get("old") is None
+
+        # Verify both _cache and _locks are cleaned
+        assert "old" not in cache._cache
+        assert "old" not in cache._locks
+
+    def test_lru_eviction_cleans_locks(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Verify that when LRU eviction occurs, locks are also cleaned up
+        monkeypatch.setattr("fastapi_docs_mcp.cache.CACHE_MAX_ENTRIES", 3)
+
+        # Create locks for entries
+        for i in range(5):
+            cache.cache_set(f"k{i}", str(i))
+            cache._locks[f"k{i}"] = asyncio.Lock()
+
+        # Verify LRU eviction happened and locks were cleaned
+        assert len(cache._cache) == 3
+        assert "k0" not in cache._cache
+        assert "k0" not in cache._locks
+        assert "k1" not in cache._locks
+        assert "k4" in cache._cache
+        assert "k4" in cache._locks
+
 
 # --------------------------------------------------------------------------- #
 # http                                                                        #

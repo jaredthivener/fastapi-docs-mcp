@@ -28,6 +28,7 @@ def cache_get(key: str) -> str | None:
     stored_at, value = entry
     if time.monotonic() - stored_at > CACHE_TTL:
         _cache.pop(key, None)
+        _locks.pop(key, None)  # Clean up associated lock
         return None
     _cache.move_to_end(key)  # mark most-recently-used
     return value
@@ -38,7 +39,8 @@ def cache_set(key: str, value: str) -> None:
     _cache[key] = (time.monotonic(), value)
     _cache.move_to_end(key)
     while len(_cache) > CACHE_MAX_ENTRIES:
-        _cache.popitem(last=False)
+        evicted_key, _ = _cache.popitem(last=False)
+        _locks.pop(evicted_key, None)  # Clean up associated lock
 
 
 def clear() -> None:
