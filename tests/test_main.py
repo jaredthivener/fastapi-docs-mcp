@@ -10,7 +10,6 @@ from typing import Any
 import httpx
 import pytest
 
-
 from fastapi_docs_mcp import (
     cache,
     content,
