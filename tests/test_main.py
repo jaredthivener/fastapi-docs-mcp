@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
 import pytest
-import asyncio
+
 
 from fastapi_docs_mcp import (
     cache,
