@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 import pytest
+import asyncio
 
 from fastapi_docs_mcp import (
     cache,
