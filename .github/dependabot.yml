@@ -18,3 +18,12 @@ updates:
       prefix: "⬆️"
     labels:
       - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "⬆️"
+    labels:
+      - "dependencies"
