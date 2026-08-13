@@ -25,8 +25,15 @@ its job is to fetch, clean, and **token-efficiently** present documentation.
 4. **Token efficiency is a first-class requirement.** Every byte returned is a
    token the assistant pays for. Strip noise; prefer structured markdown; honor
    the docs' own line-slices for code.
-5. **Fail soft.** Tools return helpful guidance text instead of raising, so the
-   assistant can recover.
+5. **Fail soft on confirmed absence, fail loud on confirmed unreachability.**
+   A page that genuinely doesn't exist (both the markdown and HTML sources
+   confirm it, e.g. a real 404) returns helpful guidance text, not an error —
+   that's a legitimate empty result. But if *neither* source could even be
+   reached (network error, timeout, non-404 upstream failure on both), the
+   tool raises `ToolError` (MCP `isError: true`) instead of silently claiming
+   "not found" — collapsing the two would misinform the assistant and defeat
+   the fallback seam's own resilience guarantee under a shared outage. See
+   `content.py`'s module docstring and `http.UpstreamError`.
 
 ## 3. High-level architecture
 
@@ -114,10 +121,22 @@ even if the repo reorganizes or the include macro changes again.
 - **Input validation** on tool args: length cap, control-char strip, reject
   scheme/host/`..`-traversal injection in `path`.
 - Logging is configured to **stderr** (stdout is the MCP stdio channel).
+- `mask_error_details=True` on the `FastMCP` instance: only deliberately
+  authored `ToolError` messages (e.g. the "upstream unreachable" message in
+  `content.py`) reach the client; any unanticipated exception is masked to a
+  generic message.
 
 ### 5.3 MCP conformance
 - All six tools annotated `readOnlyHint=True`, `openWorldHint=True`.
-- Explicit stdio transport. Tools return guidance strings, never exceptions.
+- Explicit stdio transport. `http._download` distinguishes a **confirmed
+  absence** (HTTP 404 → returns `None`) from a **failed check** (timeout,
+  connection error, non-404 status → raises `http.UpstreamError`).
+  `content.py` is the seam that resolves this across the markdown/HTML
+  fallback: it returns soft guidance text for a confirmed absence, and
+  raises `ToolError` (MCP `isError: true`) only when neither source could
+  confirm anything either way — per the MCP spec's tool-execution-error
+  channel, this gives the model an actionable, self-correctable signal
+  ("retry") instead of a false "page doesn't exist."
 
 ## 6. Acceptance gate
 
