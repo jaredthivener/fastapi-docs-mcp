@@ -23,6 +23,13 @@ from .config import (
 
 logger = logging.getLogger(__name__)
 
+
+class UpstreamError(Exception):
+    """Raised when a fetch could not be completed (timeout, network error, non-404
+    HTTP status). Distinct from a confirmed-absent resource, which is ``None`` —
+    callers must not treat the two as equivalent (see ``content.py``)."""
+
+
 # A persistent client gives connection reuse / keep-alive. httpx clients are
 # bound to the event loop they run on, so we key the singleton by loop: one
 # client per loop (reused within it), which also keeps pytest's function-scoped
@@ -65,7 +72,14 @@ def _host_allowed(url: str) -> bool:
 
 
 async def _download(url: str) -> str | None:
-    """Stream a response, enforcing the allowlist (post-redirect) and size cap."""
+    """Stream a response, enforcing the allowlist (post-redirect) and size cap.
+
+    Returns ``None`` only for a *confirmed absence* (HTTP 404) or a
+    security-relevant refusal (disallowed host/redirect) — both fail closed and
+    quiet by design. Anything else that prevents a real answer (timeout,
+    connection error, non-404 HTTP status) raises ``UpstreamError``, since the
+    caller cannot tell "doesn't exist" from "couldn't check" from ``None`` alone.
+    """
     if not _host_allowed(url):
         logger.warning("Refusing fetch of disallowed host: %s", url)
         return None
@@ -90,17 +104,24 @@ async def _download(url: str) -> str | None:
 
             encoding = response.encoding or "utf-8"
             return b"".join(chunks).decode(encoding, errors="replace")
-    except httpx.TimeoutException:
+    except httpx.TimeoutException as exc:
         logger.warning("Timeout fetching %s", url)
-        return None
+        raise UpstreamError(f"Timeout fetching {url}") from exc
     except httpx.HTTPStatusError as exc:
-        logger.warning("HTTP %d fetching %s", exc.response.status_code, url)
-        return None
+        status = exc.response.status_code
+        logger.warning("HTTP %d fetching %s", status, url)
+        if status == 404:
+            return None
+        raise UpstreamError(f"HTTP {status} fetching {url}") from exc
     except httpx.HTTPError as exc:
         logger.warning("HTTP error fetching %s: %s", url, exc)
-        return None
+        raise UpstreamError(f"HTTP error fetching {url}: {exc}") from exc
 
 
 async def fetch(url: str) -> str | None:
-    """Fetch ``url`` (cached, single-flight). Returns text or ``None`` on failure."""
+    """Fetch ``url`` (cached, single-flight).
+
+    Returns text, or ``None`` for a confirmed-absent/disallowed resource.
+    Raises ``UpstreamError`` if the fetch could not be completed at all.
+    """
     return await cache.get_or_fetch(url, lambda: _download(url))

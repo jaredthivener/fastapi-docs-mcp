@@ -31,7 +31,11 @@ async def _lifespan(_server: FastMCP) -> AsyncIterator[None]:
         await http.aclose()
 
 
-mcp = FastMCP("FastAPI-Docs-Expert", lifespan=_lifespan)
+# mask_error_details: only ToolError messages (the ones we deliberately author,
+# e.g. in content.py) reach the client; any unanticipated exception is masked to
+# a generic message, consistent with the rest of the server's defense-in-depth
+# posture (host allowlist, size caps, input sanitization).
+mcp = FastMCP("FastAPI-Docs-Expert", lifespan=_lifespan, mask_error_details=True)
 
 # Importing tools registers the @mcp.tool functions on the instance above.
 # (Imported last to avoid a circular import: tools depends on `mcp`/`READONLY`.)

@@ -52,11 +52,24 @@ def md_url_candidates(path: str) -> list[str]:
 
 
 async def fetch_markdown(path: str) -> str | None:
-    """Fetch raw markdown for a doc path, trying section-index fallback."""
+    """Fetch raw markdown for a doc path, trying section-index fallback.
+
+    Raises ``http.UpstreamError`` only if *every* candidate URL fails
+    transiently — a confirmed 404 on one candidate doesn't stop the next
+    candidate from being tried, and a transient failure on one candidate
+    doesn't stop the next candidate either.
+    """
+    had_error = False
     for url in md_url_candidates(path):
-        md = await http.fetch(url)
+        try:
+            md = await http.fetch(url)
+        except http.UpstreamError:
+            had_error = True
+            continue
         if md:
             return md
+    if had_error:
+        raise http.UpstreamError(f"Could not fetch markdown for path: {path}")
     return None
 
 
@@ -99,7 +112,7 @@ async def resolve_includes(md: str) -> str:
         return md
 
     urls = [_include_url(ref) for _, _, ref, _ in directives]
-    codes = await asyncio.gather(*(http.fetch(u) if u else _none() for u in urls))
+    codes = await asyncio.gather(*(_fetch_include(u) for u in urls))
 
     parts: list[str] = []
     last = 0
@@ -115,8 +128,21 @@ async def resolve_includes(md: str) -> str:
     return "".join(parts)
 
 
-async def _none() -> str | None:
-    return None
+async def _fetch_include(url: str | None) -> str | None:
+    """Fetch an include's code, or ``None`` if absent/unavailable.
+
+    Includes are supplementary content: a transient upstream failure here
+    degrades to the existing "(example unavailable: ...)" placeholder rather
+    than failing the whole page, so ``UpstreamError`` is swallowed (unlike
+    the page-level fetches in ``fetch_markdown``/``content.py``, which must
+    propagate it to distinguish "confirmed absent" from "couldn't check").
+    """
+    if url is None:
+        return None
+    try:
+        return await http.fetch(url)
+    except http.UpstreamError:
+        return None
 
 
 # --- Cleanup ----------------------------------------------------------------
