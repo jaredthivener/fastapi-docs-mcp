@@ -1,0 +1,37 @@
+name: Canary
+
+# DESIGN.md principle #1 is "never breaks on upstream change" — the
+# include-directive syntax has already changed once ({!...!} -> {* *}).
+# The unit test suite mocks the network, so it can't catch upstream drift
+# (sitemap format, markdown paths, include syntax). This workflow runs the
+# live, network-dependent tests (`tests/test_live.py`, deselected by
+# default in `test.yml`) on a schedule so drift is caught by a red
+# scheduled run instead of a user report.
+#
+# Kept separate from test.yml so a flaky/offline upstream never blocks a
+# PR merge.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run live integration tests
+        run: uv run pytest -m integration
