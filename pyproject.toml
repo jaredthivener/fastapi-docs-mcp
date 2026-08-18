@@ -30,7 +30,7 @@ dev = [
     "hypothesis~=6.165",
     "bandit~=1.9",
     "ruff~=0.16",
-    "mypy~=2.1",
+    "mypy~=2.3",
 ]
 
 [build-system]
