@@ -23,7 +23,12 @@ dependencies = [
     # pulls this in transitively, but an import we rely on must be declared
     # ourselves rather than riding on another package's dependency graph.
     "mcp-types~=2.2",
-    "httpx~=0.28",
+    # [http2]: multiplexes concurrent requests over one connection instead of
+    # needing a separate TCP connection each -- both upstream hosts support
+    # it, and it directly reduces the connection-pool pressure the
+    # docs_src-include fan-out (see cache.py/config.MAX_CONCURRENT_FETCHES)
+    # creates.
+    "httpx[http2]~=0.28",
 ]
 
 [project.optional-dependencies]

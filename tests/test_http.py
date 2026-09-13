@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -9,7 +10,7 @@ import httpx
 import pytest
 
 from fastapi_docs_mcp import http
-from fastapi_docs_mcp.config import BASE_URL
+from fastapi_docs_mcp.config import BASE_URL, MAX_CONCURRENT_FETCHES
 
 
 class _FakeStream:
@@ -151,3 +152,79 @@ class TestHttp:
         assert c1 is c2
         await http.aclose()
         assert http._client is None
+
+    def test_new_client_enables_http2_and_matches_concurrency_limit(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Live-verified separately that both upstream hosts actually
+        # negotiate HTTP/2; this guards the config that makes that possible
+        # against a silent regression. max_connections is tied to
+        # MAX_CONCURRENT_FETCHES so the semaphore below and the pool can
+        # never drift apart.
+        captured: dict[str, object] = {}
+
+        class _RecordingClient:
+            def __init__(self, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        monkeypatch.setattr(httpx, "AsyncClient", _RecordingClient)
+        http._new_client()
+
+        assert captured["http2"] is True
+        limits = captured["limits"]
+        assert isinstance(limits, httpx.Limits)
+        assert limits.max_connections == MAX_CONCURRENT_FETCHES
+
+    async def test_get_fetch_semaphore_singleton(self) -> None:
+        s1 = http._get_fetch_semaphore()
+        s2 = http._get_fetch_semaphore()
+        assert s1 is s2
+
+    async def test_download_bounds_concurrency(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Regression test for the connection-pool-exhaustion fix: concurrent
+        # fetch attempts must never exceed MAX_CONCURRENT_FETCHES in flight
+        # at once, however many callers race in at the same time.
+        in_flight = 0
+        peak = 0
+        lock = asyncio.Lock()
+
+        class _SlowStream:
+            url = httpx.URL(f"{BASE_URL}/x")
+            encoding = "utf-8"
+
+            async def __aenter__(self) -> _SlowStream:
+                nonlocal in_flight, peak
+                async with lock:
+                    in_flight += 1
+                    peak = max(peak, in_flight)
+                await asyncio.sleep(0.02)
+                return self
+
+            async def __aexit__(self, *_: Any) -> bool:
+                nonlocal in_flight
+                async with lock:
+                    in_flight -= 1
+                return False
+
+            def raise_for_status(self) -> None:
+                return None
+
+            async def aiter_bytes(self) -> AsyncIterator[bytes]:
+                yield b"ok"
+
+        class _FakeClient:
+            is_closed = False
+
+            def stream(self, _method: str, _url: str) -> _SlowStream:
+                return _SlowStream()
+
+        monkeypatch.setattr(http, "get_client", _FakeClient)
+
+        n = MAX_CONCURRENT_FETCHES * 3
+        results = await asyncio.gather(
+            *(http._download(f"{BASE_URL}/{i}") for i in range(n))
+        )
+        assert results == ["ok"] * n
+        assert peak <= MAX_CONCURRENT_FETCHES
