@@ -29,6 +29,14 @@ class TestTools:
         assert "tutorial/cors" in out
         assert ".." not in out.splitlines()[0]
 
+    async def test_get_docs_sanitizes_embedded_newline(self, mock_net: None) -> None:
+        # Regression test for the CRLF-survival gap: an embedded \r\n must not
+        # reach the constructed URL, and the injected text must not land on
+        # its own line (the actual log-injection/header-injection primitive).
+        out = await tools.get_fastapi_docs("tutorial/cors\r\nX-Injected: evil")
+        assert "\r" not in out
+        assert "X-Injected: evil" not in out.splitlines()
+
     async def test_get_docs_unreachable_raises_tool_error(
         self, unreachable_net: None
     ) -> None:
@@ -169,6 +177,22 @@ class TestTools:
     def test_clean_path(self) -> None:
         assert tools._clean_path("/tutorial/cors/") == "tutorial/cors"
         assert tools._clean_path("../../etc/passwd") == "etc/passwd"
+
+    def test_clean_arg_strips_all_control_chars(self) -> None:
+        # Regression test: the control-char regex used to gap around tab/LF/CR
+        # (0x09, 0x0A, 0x0D), letting them survive into a constructed URL --
+        # an input-validation gap even though downstream layers (httpx's URL
+        # parsing, FastMCP's error masking) already prevented it from being
+        # exploitable. Covers the full C0 range (0x00-0x1F) + DEL (0x7F).
+        raw = "".join(chr(c) for c in range(0x00, 0x20)) + "\x7f"
+        cleaned = tools._clean_arg(f"safe{raw}text")
+        assert cleaned == "safetext"
+
+    def test_clean_path_strips_embedded_newline_and_cr(self) -> None:
+        injected = "tutorial/cors\r\nX-Injected: evil"
+        cleaned = tools._clean_path(injected)
+        assert "\r" not in cleaned
+        assert "\n" not in cleaned
 
     def test_cap_code(self) -> None:
         capped = tools._cap_code("\n".join(str(i) for i in range(40)), max_lines=5)
