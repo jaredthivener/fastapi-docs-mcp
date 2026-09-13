@@ -1,0 +1,268 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" version="24.0.0" type="device">
+  <diagram id="fastapi-docs-mcp-architecture" name="Architecture">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1820" pageHeight="1180" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="bg" value="" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;fillColor=#F5F7FA;strokeColor=#546E7A;strokeWidth=2;dashed=1;dashPattern=8 4;verticalAlign=top;align=left;spacingTop=10;spacingLeft=18;fontSize=13;fontStyle=1;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="40" y="210" width="1420" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="bgLabel" value="fastapi-docs-mcp -- Python process (trust boundary)" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#37474F;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="216" width="600" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="title" value="FastAPI Docs MCP Server" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#263238;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="520" y="8" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Sitemap-driven discovery -- markdown-preferred content, HTML fallback -- single-flight network layer" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#607D8B;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="460" y="46" width="820" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="clientIcon" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/assets/carbon-icons/1/Chat_Bot.svg;" vertex="1" parent="1">
+          <mxGeometry x="796" y="82" width="46" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="clientBox" value="MCP Client (AI assistant)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#263238;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="670" y="132" width="300" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblOrch" value="ORCHESTRATION" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#78909C;fontFamily=Helvetica;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="300" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="server" value="server.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#90A4AE;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="80" y="270" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="serverBody" value="logging to stderr&#10;imports tools (registers)&#10;run() -&gt; stdio transport" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#455A64;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="300" width="200" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="app" value="app.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#90A4AE;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="80" y="365" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="appBody" value="shared FastMCP instance&#10;READONLY annotations&#10;lifespan: closes http client" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#455A64;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="395" width="200" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tools" value="tools.py" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;strokeWidth=3;fontSize=16;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#283593;" vertex="1" parent="1">
+          <mxGeometry x="340" y="250" width="760" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="pill1" value="get_fastapi_docs" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="360" y="300" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pill2" value="search_fastapi_docs" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="600" y="300" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pill3" value="list_fastapi_pages" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="840" y="300" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pill4" value="get_fastapi_example" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="360" y="340" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pill5" value="compare_fastapi_approaches" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="600" y="340" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pill6" value="get_fastapi_best_practices" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#C5CAE9;strokeColor=#5C6BC0;fontSize=10.5;fontFamily=Consolas;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="840" y="340" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="toolsCaption" value="6 read-only @mcp.tool functions -- output_schema=None on every tool (skips FastMCP's auto-generated result schema)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontFamily=Helvetica;fontColor=#5C6BC0;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="382" width="710" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="config" value="config.py" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F57F17;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="250" width="200" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="configBody" value="every constant, one place:&#10;&#10;ALLOWED_HOSTS (2)&#10;CONNECT_TIMEOUT 5s&#10;READ_TIMEOUT 15s&#10;WRITE_TIMEOUT 5s&#10;POOL_TIMEOUT 5s&#10;MAX_CONCURRENT_FETCHES 20&#10;MAX_DOWNLOAD_BYTES 5MB&#10;CACHE_TTL 6h&#10;CACHE_MAX_ENTRIES 256&#10;MAX_CONTENT_LENGTH 15k&#10;MAX_INPUT_LENGTH 256&#10;MAX_INCLUDES 16" style="text;html=1;align=left;verticalAlign=top;fontSize=10.5;fontFamily=Consolas;fontColor=#795548;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="288" width="200" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblDisc" value="DISCOVERY &amp; CONTENT ACQUISITION" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#78909C;fontFamily=Helvetica;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="400" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sitemap" value="sitemap.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00897B;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#004D40;" vertex="1" parent="1">
+          <mxGeometry x="80" y="476" width="245" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="sitemapBody" value="fetch_sitemap()&#10;search_sitemap_urls()&#10;categorize_urls()&#10;KEYWORD_ALIASES&#10;&#10;the only source of&#10;page-path truth" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#00695C;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="508" width="245" height="115" as="geometry" />
+        </mxCell>
+
+        <mxCell id="content" value="content.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="345" y="476" width="245" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="contentBody" value="get_page_text()&#10;get_page_code()&#10;&#10;the fallback seam:&#10;None = confirmed absent&#10;ToolError = unreachable" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#8D6E00;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="345" y="508" width="245" height="115" as="geometry" />
+        </mxCell>
+
+        <mxCell id="markdown" value="markdown.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#43A047;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="610" y="476" width="245" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="markdownBody" value="fetch_markdown()&#10;resolve_includes()&#10;  up to 16, concurrent&#10;clean_mkdocs()&#10;&#10;preferred: token-efficient" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#2E7D32;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="508" width="245" height="115" as="geometry" />
+        </mxCell>
+
+        <mxCell id="htmlmod" value="html.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EFEBE9;strokeColor=#8D6E63;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#4E342E;" vertex="1" parent="1">
+          <mxGeometry x="875" y="476" width="245" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="htmlBody" value="extract_text()&#10;extract_code_blocks()&#10;html.unescape() based&#10;&#10;resilience fallback only,&#10;hypothesis-fuzzed" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontFamily=Helvetica;fontColor=#5D4037;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="875" y="508" width="245" height="115" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblNet" value="NETWORK &amp; RESILIENCE" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#78909C;fontFamily=Helvetica;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="658" width="300" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="http" value="http.py" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=3;fontSize=15;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#0D47A1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="684" width="520" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="lockIcon" style="strokeColor=#ffffff;html=1;fillColor=#1565C0;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.cisco.security.lock;" vertex="1" parent="1">
+          <mxGeometry x="180" y="716" width="38" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="gaugeIcon" style="html=1;verticalLabelPosition=bottom;align=center;labelBackgroundColor=none;verticalAlign=top;strokeWidth=2;strokeColor=#1565C0;shadow=0;dashed=0;shape=mxgraph.ios7.icons.gauge;" vertex="1" parent="1">
+          <mxGeometry x="182" y="774" width="34" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="boltIcon" style="shape=image;html=1;verticalAlign=top;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/assets/font-awesome/1/Bolt_Lightning.svg;" vertex="1" parent="1">
+          <mxGeometry x="188" y="768" width="21" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="httpBody" value="the single network choke point&#10;&#10;* host allowlist -- 2 hosts, enforced post-redirect&#10;* semaphore(20) == pool max_connections&#10;* HTTP/2 -- verified live on both hosts&#10;* split timeouts: connect 5s / read 15s / write 5s / pool 5s&#10;* streamed download, 5 MB hard cap" style="text;html=1;align=left;verticalAlign=top;fontSize=10.5;fontFamily=Helvetica;fontColor=#0D47A1;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="250" y="716" width="400" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cache" value="cache.py" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;fontSize=14;fontStyle=1;fontFamily=Consolas;verticalAlign=top;spacingTop=8;fontColor=#4A148C;" vertex="1" parent="1">
+          <mxGeometry x="710" y="684" width="330" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="cacheIcon" style="sketch=0;outlineConnect=0;fontColor=#4A148C;gradientColor=none;fillColor=#ffffff;strokeColor=#6A1B9A;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cache_node;" vertex="1" parent="1">
+          <mxGeometry x="730" y="722" width="46" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="cacheBody" value="get_or_fetch() -- single-flight&#10;&#10;* TTL 6 hours&#10;* LRU-bounded, 256 entries&#10;* concurrent misses for the&#10;  same key collapse into one&#10;  upstream fetch" style="text;html=1;align=left;verticalAlign=top;fontSize=10.5;fontFamily=Helvetica;fontColor=#4A148C;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="790" y="716" width="240" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fastapiSite" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#009485;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="250" y="940" width="460" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="globeIcon" style="sketch=0;html=1;aspect=fixed;strokeColor=none;shadow=0;fillColor=#009485;verticalAlign=top;labelPosition=center;shape=mxgraph.gcp2.globe_world;" vertex="1" parent="1">
+          <mxGeometry x="272" y="962" width="64" height="61" as="geometry" />
+        </mxCell>
+        <mxCell id="fastapiTitle" value="fastapi.tiangolo.com" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontFamily=Consolas;fontColor=#00695C;" vertex="1" parent="1">
+          <mxGeometry x="360" y="958" width="330" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="fastapiBody" value="GET /sitemap.xml -- page discovery&#10;GET /{path}/ -- live HTML&#10;  (fallback only, if markdown fails)" style="text;html=1;align=left;verticalAlign=top;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="360" y="988" width="335" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="githubSite" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#24292E;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="780" y="940" width="460" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="githubIcon" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.github;" vertex="1" parent="1">
+          <mxGeometry x="800" y="960" width="58" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="githubTitle" value="raw.githubusercontent.com" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontFamily=Consolas;fontColor=#24292E;" vertex="1" parent="1">
+          <mxGeometry x="880" y="958" width="340" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="githubBody" value="fastapi/fastapi @ master&#10;GET docs/en/docs/{path}.md -- preferred&#10;GET docs_src/**/*.py -- code includes" style="text;html=1;align=left;verticalAlign=top;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="880" y="988" width="345" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="Legend" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B0BEC5;strokeWidth=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=12;fontStyle=1;fontColor=#37474F;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1500" y="250" width="240" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1line" style="endArrow=block;html=1;strokeColor=#455A64;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry x="1520" y="292" width="1" height="1" relative="1" as="geometry">
+            <mxPoint x="1520" y="292" as="sourcePoint" />
+            <mxPoint x="1556" y="292" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg1txt" value="Primary request flow" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1564" y="282" width="170" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2line" style="endArrow=block;html=1;strokeColor=#90A4AE;strokeWidth=2;dashed=1;" edge="1" parent="1">
+          <mxGeometry x="1520" y="322" width="1" height="1" relative="1" as="geometry">
+            <mxPoint x="1520" y="322" as="sourcePoint" />
+            <mxPoint x="1556" y="322" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg2txt" value="Fallback / cross-cutting" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1564" y="312" width="170" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3line" style="endArrow=block;html=1;strokeColor=#1565C0;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry x="1520" y="352" width="1" height="1" relative="1" as="geometry">
+            <mxPoint x="1520" y="352" as="sourcePoint" />
+            <mxPoint x="1556" y="352" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg3txt" value="Network egress (allow-listed)" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1564" y="342" width="170" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legSwatch1" value="" style="rounded=1;arcSize=100;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="382" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legTxt4" value="Security control" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1544" y="380" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legSwatch2" value="" style="rounded=1;arcSize=100;whiteSpace=wrap;html=1;fillColor=#43A047;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="410" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legTxt5" value="Performance optimization" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1544" y="408" width="190" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legSwatch3" value="" style="rounded=1;arcSize=100;whiteSpace=wrap;html=1;fillColor=#6A1B9A;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="438" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legTxt6" value="Cache / state" style="text;html=1;align=left;verticalAlign=middle;fontSize=10.5;fontFamily=Helvetica;fontColor=#37474F;" vertex="1" parent="1">
+          <mxGeometry x="1544" y="436" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legNote" value="98% test coverage&#10;mypy --strict&#10;ruff PEP 8/257" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontFamily=Helvetica;fontColor=#78909C;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="470" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_client_tools" value="stdio / JSON-RPC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;fontSize=10;fontColor=#37474F;labelBackgroundColor=#F5F7FA;endArrow=block;" edge="1" parent="1" source="clientBox" target="tools">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_server_tools" value="imports (registers)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#90A4AE;strokeWidth=1.5;dashed=1;fontSize=9.5;fontColor=#607D8B;labelBackgroundColor=#F5F7FA;endArrow=block;" edge="1" parent="1" source="server" target="tools">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_tools" value="provides mcp instance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#90A4AE;strokeWidth=1.5;dashed=1;fontSize=9.5;fontColor=#607D8B;labelBackgroundColor=#F5F7FA;endArrow=block;" edge="1" parent="1" source="app" target="tools">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tools_sitemap" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="tools" target="sitemap">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tools_content" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="tools" target="content">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_content_markdown" value="&#9312; preferred" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#43A047;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#2E7D32;labelBackgroundColor=#FFF8E1;endArrow=block;" edge="1" parent="1" source="content" target="markdown">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_content_html" value="&#9313; fallback" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8D6E63;strokeWidth=2;dashed=1;fontSize=10;fontStyle=1;fontColor=#5D4037;labelBackgroundColor=#FFF8E1;endArrow=block;" edge="1" parent="1" source="content" target="htmlmod">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sitemap_http" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="sitemap" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_markdown_http" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="markdown" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_content_http" value="live HTML (fallback)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#455A64;strokeWidth=2;fontSize=9.5;fontColor=#607D8B;labelBackgroundColor=#F5F7FA;endArrow=block;" edge="1" parent="1" source="content" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_config_http" value="constants" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#F57F17;strokeWidth=1.5;dashed=1;fontSize=9.5;fontColor=#E65100;labelBackgroundColor=#FFFDE7;endArrow=block;" edge="1" parent="1" source="config" target="http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_config_tools" value="constants" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#F57F17;strokeWidth=1.5;dashed=1;fontSize=9.5;fontColor=#E65100;labelBackgroundColor=#FFFDE7;endArrow=block;" edge="1" parent="1" source="config" target="tools">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_http_cache" value="fetch() routes through" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6A1B9A;strokeWidth=2;fontSize=10;fontColor=#4A148C;labelBackgroundColor=#F3E5F5;startArrow=block;endArrow=block;" edge="1" parent="1" source="http" target="cache">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_http_fastapi" value="HTTPS &#183; HTTP/2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1565C0;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#0D47A1;labelBackgroundColor=#E3F2FD;endArrow=block;" edge="1" parent="1" source="http" target="fastapiSite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_http_github" value="HTTPS &#183; HTTP/2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1565C0;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#0D47A1;labelBackgroundColor=#E3F2FD;endArrow=block;" edge="1" parent="1" source="http" target="githubSite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
