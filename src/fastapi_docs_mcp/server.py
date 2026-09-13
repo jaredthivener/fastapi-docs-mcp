@@ -7,8 +7,8 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastmcp import FastMCP
-from fastmcp.tools.tool import ToolAnnotations
+from fastmcp.server import FastMCP
+from mcp_types import ToolAnnotations
 
 from . import http
 
@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 # Shared annotations: every tool is read-only and talks to the open web.
-READONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=True)
+READONLY = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 
 
 @asynccontextmanager
