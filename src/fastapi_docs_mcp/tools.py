@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import TypedDict
 
@@ -268,11 +269,14 @@ async def compare_fastapi_approaches(topic: str) -> str:
         pages = found[:3]
 
     lines = [f"## {title}\n", f"*{description}*\n", "---\n"]
-    for page in pages:
-        text = await content.get_page_text(page, max_length=3200)
+    # Fetch every page's text+code concurrently rather than one page (two
+    # round trips each) at a time -- the pages are independent, and the
+    # shared cache/single-flight layer means running them together costs no
+    # extra upstream requests.
+    fetched = await asyncio.gather(*(_fetch_compare_page(page) for page in pages))
+    for page, (text, code_blocks) in zip(pages, fetched, strict=True):
         if not text:
             continue
-        code_blocks = await content.get_page_code(page)
         lines.append(f"### {_first_heading(text, page)}\n")
         lines.append(f"**Docs**: {BASE_URL}/{page}/\n")
         if code_blocks:
@@ -282,6 +286,14 @@ async def compare_fastapi_approaches(topic: str) -> str:
         lines.append(f"> {_summary(text)}\n")
 
     return "\n".join(lines)
+
+
+async def _fetch_compare_page(page: str) -> tuple[str | None, list[str]]:
+    """Fetch one comparison page's text and code examples concurrently."""
+    text, code_blocks = await asyncio.gather(
+        content.get_page_text(page, max_length=3200), content.get_page_code(page)
+    )
+    return text, code_blocks
 
 
 def _compare_help(topic: str) -> str:
@@ -328,8 +340,11 @@ Use `list_fastapi_pages()` to see available topics."""
         f"## Best Practices: {topic.strip().title()}\n",
         f"*Found {len(matching)} relevant page(s)*\n\n---\n",
     ]
-    for path in matching[:3]:
-        text = await content.get_page_text(path, max_length=3200)
+    top_matches = matching[:3]
+    texts = await asyncio.gather(
+        *(content.get_page_text(path, max_length=3200) for path in top_matches)
+    )
+    for path, text in zip(top_matches, texts, strict=True):
         if not text:
             continue
         lines.append(f"### {_first_heading(text, path)}")
