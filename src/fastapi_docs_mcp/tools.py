@@ -6,8 +6,8 @@ import re
 from typing import TypedDict
 
 from . import content, sitemap
+from .app import READONLY, mcp
 from .config import BASE_URL, MAX_INPUT_LENGTH
-from .server import READONLY, mcp
 
 
 class _Comparison(TypedDict):
@@ -105,7 +105,7 @@ def _cap_code(code: str, max_lines: int = 18) -> str:
     """Trim a code block to a representative head (compare view is illustrative)."""
     lines = code.splitlines()
     if len(lines) > max_lines:
-        lines = lines[:max_lines] + ["# ..."]
+        lines = [*lines[:max_lines], "# ..."]
     return "\n".join(lines)
 
 

@@ -51,7 +51,7 @@ def _patch_client(monkeypatch: pytest.MonkeyPatch, stream: _FakeStream) -> None:
         def stream(self, _method: str, _url: str) -> _FakeStream:
             return stream
 
-    monkeypatch.setattr(http, "get_client", lambda: _FakeClient())
+    monkeypatch.setattr(http, "get_client", _FakeClient)
 
 
 def _status_error(status: int) -> httpx.HTTPStatusError:

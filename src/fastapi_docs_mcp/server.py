@@ -1,16 +1,15 @@
-"""MCP server wiring: logging, the FastMCP instance, tool registration, run()."""
+"""MCP server wiring: logging, tool registration, run()."""
 
 from __future__ import annotations
 
 import logging
 import sys
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
-from fastmcp.server import FastMCP
-from mcp_types import ToolAnnotations
-
-from . import http
+# Importing tools registers the @mcp.tool functions onto the `mcp` instance
+# imported below; the `as tools` re-export idiom tells the linter this
+# import is deliberate even though the name itself is never used further.
+from . import tools as tools
+from .app import mcp
 
 # stdio is the MCP transport on stdout, so logs MUST go to stderr.
 logging.basicConfig(
@@ -19,28 +18,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
-# Shared annotations: every tool is read-only and talks to the open web.
-READONLY = ToolAnnotations(read_only_hint=True, open_world_hint=True)
-
-
-@asynccontextmanager
-async def _lifespan(_server: FastMCP) -> AsyncIterator[None]:
-    try:
-        yield
-    finally:
-        await http.aclose()
-
-
-# mask_error_details: only ToolError messages (the ones we deliberately author,
-# e.g. in content.py) reach the client; any unanticipated exception is masked to
-# a generic message, consistent with the rest of the server's defense-in-depth
-# posture (host allowlist, size caps, input sanitization).
-mcp = FastMCP("FastAPI-Docs-Expert", lifespan=_lifespan, mask_error_details=True)
-
-# Importing tools registers the @mcp.tool functions on the instance above.
-# (Imported last to avoid a circular import: tools depends on `mcp`/`READONLY`.)
-from . import tools as tools  # noqa: E402,F401
-
 
 def run() -> None:  # pragma: no cover
+    """Run the server over the stdio transport."""
     mcp.run(transport="stdio")

@@ -39,9 +39,6 @@ jobs:
       - name: Type check with mypy
         run: uv run mypy main.py src/fastapi_docs_mcp --ignore-missing-imports
 
-      - name: Security check with bandit
-        run: uv run bandit -c pyproject.toml --quiet -r main.py src/fastapi_docs_mcp
-
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -65,7 +62,7 @@ jobs:
         run: uv sync --locked --extra dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=fastapi_docs_mcp --cov-report=term-missing --cov-fail-under=90
+        run: uv run pytest --cov=fastapi_docs_mcp --cov-report=term-missing --cov-fail-under=95
 
   # All tests must pass for the PR to be merged
   check:

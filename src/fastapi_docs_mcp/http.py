@@ -25,9 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 class UpstreamError(Exception):
-    """Raised when a fetch could not be completed (timeout, network error, non-404
-    HTTP status). Distinct from a confirmed-absent resource, which is ``None`` —
-    callers must not treat the two as equivalent (see ``content.py``)."""
+    """Raised when a fetch could not be completed.
+
+    Covers a timeout, network error, or non-404 HTTP status. Distinct from a
+    confirmed-absent resource, which is ``None`` — callers must not treat the
+    two as equivalent (see ``content.py``).
+    """
 
 
 # A persistent client gives connection reuse / keep-alive. httpx clients are

@@ -71,9 +71,8 @@ def extract_code_blocks(html: str) -> list[str]:
             blocks.append(match)
 
     cleaned: list[str] = []
-    for block in blocks:
-        block = _TAG_RE.sub("", block)
-        block = decode_html_entities(block).strip()
+    for raw_block in blocks:
+        block = decode_html_entities(_TAG_RE.sub("", raw_block)).strip()
         if len(block) > 20:
             cleaned.append(block)
     return cleaned

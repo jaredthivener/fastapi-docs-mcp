@@ -19,13 +19,13 @@ from fastapi_docs_mcp import (
 )
 
 __all__ = [
-    "mcp",
-    "get_fastapi_docs",
-    "search_fastapi_docs",
-    "list_fastapi_pages",
-    "get_fastapi_example",
     "compare_fastapi_approaches",
     "get_fastapi_best_practices",
+    "get_fastapi_docs",
+    "get_fastapi_example",
+    "list_fastapi_pages",
+    "mcp",
+    "search_fastapi_docs",
 ]
 
 
