@@ -72,7 +72,12 @@ _COMPARE_ALIASES: dict[str, str] = {
     "response": "response-types",
 }
 
-_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+# Full C0 control range (0x00-0x1F) + DEL (0x7F). Previously excluded
+# tab/LF/CR (0x09, 0x0A, 0x0D) by gapping around them -- embedded newlines
+# survived into constructed URLs, an input-validation gap even though httpx's
+# own URL parsing and FastMCP's error masking already prevented it from being
+# exploitable in practice (see git history for the verified trace).
+_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 _HEADING_RE = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
 
 

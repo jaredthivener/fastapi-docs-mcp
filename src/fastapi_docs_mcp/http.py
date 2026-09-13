@@ -17,6 +17,7 @@ from . import cache
 from .config import (
     ALLOWED_HOSTS,
     CONNECT_TIMEOUT,
+    MAX_CONCURRENT_FETCHES,
     MAX_DOWNLOAD_BYTES,
     POOL_TIMEOUT,
     READ_TIMEOUT,
@@ -43,17 +44,31 @@ class UpstreamError(Exception):
 _client: httpx.AsyncClient | None = None
 _client_loop: asyncio.AbstractEventLoop | None = None
 
+# Bounds concurrent fetch *attempts* to MAX_CONCURRENT_FETCHES, matching the
+# client's own connection limit below. Tool-level fan-out (e.g. resolving up
+# to MAX_INCLUDES docs_src references for several pages at once) can easily
+# exceed that limit; without this, the excess requests would instead queue on
+# httpx's connection pool, which fails with a hard POOL_TIMEOUT rather than
+# just waiting. A plain asyncio.Semaphore has no timeout -- callers queue and
+# succeed once a slot frees, instead of erroring under load. Same loop-keyed
+# lifecycle as the client, for the same reason (pytest's per-function loops).
+_semaphore: asyncio.Semaphore | None = None
+_semaphore_loop: asyncio.AbstractEventLoop | None = None
+
 
 def _new_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
         follow_redirects=True,
+        http2=True,
         timeout=httpx.Timeout(
             connect=CONNECT_TIMEOUT,
             read=READ_TIMEOUT,
             write=WRITE_TIMEOUT,
             pool=POOL_TIMEOUT,
         ),
-        limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        limits=httpx.Limits(
+            max_connections=MAX_CONCURRENT_FETCHES, max_keepalive_connections=10
+        ),
         headers={"User-Agent": USER_AGENT},
     )
 
@@ -66,6 +81,16 @@ def get_client() -> httpx.AsyncClient:
         _client = _new_client()
         _client_loop = loop
     return _client
+
+
+def _get_fetch_semaphore() -> asyncio.Semaphore:
+    """Return the shared fetch-concurrency semaphore for the running loop."""
+    global _semaphore, _semaphore_loop
+    loop = asyncio.get_running_loop()
+    if _semaphore is None or _semaphore_loop is not loop:
+        _semaphore = asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
+        _semaphore_loop = loop
+    return _semaphore
 
 
 async def aclose() -> None:
@@ -97,7 +122,7 @@ async def _download(url: str) -> str | None:
 
     client = get_client()
     try:
-        async with client.stream("GET", url) as response:
+        async with _get_fetch_semaphore(), client.stream("GET", url) as response:
             # Reject redirects that landed off-allowlist.
             if not _host_allowed(str(response.url)):
                 logger.warning("Redirect left allowlist: %s", response.url)

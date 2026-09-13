@@ -35,6 +35,14 @@ CONNECT_TIMEOUT: Final = 5.0
 READ_TIMEOUT: Final = 15.0
 WRITE_TIMEOUT: Final = 5.0
 POOL_TIMEOUT: Final = 5.0
+
+# Also used as an in-process asyncio.Semaphore bound in http.py. The tools
+# layer can fan out well beyond this (e.g. compare_fastapi_approaches
+# gathering 3 pages, each resolving up to MAX_INCLUDES docs_src fetches
+# concurrently) -- bounding concurrent fetch *attempts* to what the pool can
+# serve immediately means excess callers queue on our own semaphore (no
+# timeout) instead of racing httpx's connection pool (a hard POOL_TIMEOUT).
+MAX_CONCURRENT_FETCHES: Final = 20
 MAX_DOWNLOAD_BYTES: Final = 5_000_000  # hard cap on any single response body
 USER_AGENT: Final = (
     f"fastapi-docs-mcp/{_VERSION} (+https://github.com/jaredthivener/fastapi-docs-mcp)"
