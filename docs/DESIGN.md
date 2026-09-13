@@ -47,7 +47,7 @@ its job is to fetch, clean, and **token-efficiently** present documentation.
                             └───┬────────┬───┘
                   discovery     │        │   content acquisition
                         ┌───────▼──┐  ┌──▼──────────┐
-                        │sitemap.py│  │ content.py  │  fetch_content(path):
+                        │sitemap.py│  │ content.py  │  get_page_text/code():
                         └────┬─────┘  └──┬───────┬──┘   markdown → HTML fallback
                              │           │       │
                              │     ┌─────▼──┐ ┌──▼─────┐
@@ -70,10 +70,10 @@ its job is to fetch, clean, and **token-efficiently** present documentation.
 | `sitemap.py` | **Discovery**: fetch/parse sitemap, keyword-alias search, categorization. |
 | `markdown.py` | Path→raw-md URL resolution, `{* *}`/`{!!}` include resolution (with `ln[]` slicing), MkDocs cleanup, truncation. |
 | `html.py` | Lean HTML→text/code extractor — the resilience fallback only. |
-| `content.py` | `fetch_content(path)`: markdown-preferred → HTML fallback seam. |
+| `content.py` | `get_page_text(path)`/`get_page_code(path)`: markdown-preferred → HTML fallback seam. |
 | `tools.py` | The six `@mcp.tool` functions. Pure orchestration. |
-| `server.py` | FastMCP instance, stderr logging, client lifespan, `mcp.run()`. |
-| `main.py` | Thin entrypoint shim re-exporting the public API (keeps Docker/mcp.json/tests stable). |
+| `app.py` | The shared `FastMCP` instance, tool annotations, client lifespan. Split out from `server.py` so both it and `tools.py` can import the instance without a circular import. |
+| `server.py` | stderr logging setup, imports `tools` to register it, `run()`. |
 
 ## 4. Content acquisition (the core optimization)
 
@@ -98,9 +98,10 @@ its job is to fetch, clean, and **token-efficiently** present documentation.
 4. `truncate_content(md)` — paragraph-aware cut at `MAX_CONTENT_LENGTH`.
 
 ### 4.3 Fallback seam
-`content.fetch_content(path)` returns markdown when steps above yield non-empty
-cleaned text; otherwise it transparently falls back to `html.py` extraction of the
-live sitemap URL. Guarantees: **any sitemap-discoverable page is always served**,
+`content.get_page_text(path)`/`get_page_code(path)` return markdown when steps
+above yield non-empty cleaned text; otherwise they transparently fall back to
+`html.py` extraction of the live sitemap URL. Guarantees: **any
+sitemap-discoverable page is always served**,
 even if the repo reorganizes or the include macro changes again.
 
 ## 5. Cross-cutting concerns
@@ -127,7 +128,7 @@ even if the repo reorganizes or the include macro changes again.
   generic message.
 
 ### 5.3 MCP conformance
-- All six tools annotated `readOnlyHint=True`, `openWorldHint=True`.
+- All six tools annotated `read_only_hint=True`, `open_world_hint=True`.
 - Explicit stdio transport. `http._download` distinguishes a **confirmed
   absence** (HTTP 404 → returns `None`) from a **failed check** (timeout,
   connection error, non-404 status → raises `http.UpstreamError`).

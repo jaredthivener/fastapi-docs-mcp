@@ -16,18 +16,24 @@ import httpx
 from . import cache
 from .config import (
     ALLOWED_HOSTS,
+    CONNECT_TIMEOUT,
     MAX_DOWNLOAD_BYTES,
-    REQUEST_TIMEOUT,
+    POOL_TIMEOUT,
+    READ_TIMEOUT,
     USER_AGENT,
+    WRITE_TIMEOUT,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class UpstreamError(Exception):
-    """Raised when a fetch could not be completed (timeout, network error, non-404
-    HTTP status). Distinct from a confirmed-absent resource, which is ``None`` —
-    callers must not treat the two as equivalent (see ``content.py``)."""
+    """Raised when a fetch could not be completed.
+
+    Covers a timeout, network error, or non-404 HTTP status. Distinct from a
+    confirmed-absent resource, which is ``None`` — callers must not treat the
+    two as equivalent (see ``content.py``).
+    """
 
 
 # A persistent client gives connection reuse / keep-alive. httpx clients are
@@ -41,7 +47,12 @@ _client_loop: asyncio.AbstractEventLoop | None = None
 def _new_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
         follow_redirects=True,
-        timeout=REQUEST_TIMEOUT,
+        timeout=httpx.Timeout(
+            connect=CONNECT_TIMEOUT,
+            read=READ_TIMEOUT,
+            write=WRITE_TIMEOUT,
+            pool=POOL_TIMEOUT,
+        ),
         limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
         headers={"User-Agent": USER_AGENT},
     )

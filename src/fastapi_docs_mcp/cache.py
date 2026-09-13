@@ -16,7 +16,11 @@ from .config import CACHE_MAX_ENTRIES, CACHE_TTL
 
 # key -> (stored_at_monotonic, value)
 _cache: OrderedDict[str, tuple[float, str]] = OrderedDict()
-# key -> lock guarding the single-flight fetch for that key
+# key -> lock guarding the single-flight fetch for that key. Reaped in
+# get_or_fetch as soon as the fetch it guards settles (see below) -- not
+# here, and not on cache eviction/expiry: a key that's fetched but never
+# cached (e.g. a confirmed-404) would otherwise never be cleaned up here,
+# leaking one lock per distinct miss for the life of the process.
 _locks: dict[str, asyncio.Lock] = {}
 
 
@@ -28,7 +32,6 @@ def cache_get(key: str) -> str | None:
     stored_at, value = entry
     if time.monotonic() - stored_at > CACHE_TTL:
         _cache.pop(key, None)
-        _locks.pop(key, None)  # Clean up associated lock
         return None
     _cache.move_to_end(key)  # mark most-recently-used
     return value
@@ -39,8 +42,7 @@ def cache_set(key: str, value: str) -> None:
     _cache[key] = (time.monotonic(), value)
     _cache.move_to_end(key)
     while len(_cache) > CACHE_MAX_ENTRIES:
-        evicted_key, _ = _cache.popitem(last=False)
-        _locks.pop(evicted_key, None)  # Clean up associated lock
+        _cache.popitem(last=False)
 
 
 def clear() -> None:
@@ -69,14 +71,22 @@ async def get_or_fetch(
     if cached is not None:
         return cached
 
-    async with _lock_for(key):
-        # Double-check: another coroutine may have populated the cache while we
-        # were waiting for the lock.
-        cached = cache_get(key)
-        if cached is not None:
-            return cached
+    lock = _lock_for(key)
+    async with lock:
+        try:
+            # Double-check: another coroutine may have populated the cache
+            # while we were waiting for the lock.
+            cached = cache_get(key)
+            if cached is not None:
+                return cached
 
-        value = await fetcher()
-        if value is not None:
-            cache_set(key, value)
-        return value
+            value = await fetcher()
+            if value is not None:
+                cache_set(key, value)
+            return value
+        finally:
+            # Reap the lock the instant this fetch settles -- hit, confirmed
+            # miss, or exception alike -- so a key that never gets cached
+            # can't accumulate a lock forever.
+            if _locks.get(key) is lock:
+                del _locks[key]

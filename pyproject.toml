@@ -18,7 +18,11 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp>=3.4.7,<4.1",
+    "fastmcp>=4.0.3,<5",
+    # Imported directly in server.py (ToolAnnotations). fastmcp currently
+    # pulls this in transitively, but an import we rely on must be declared
+    # ourselves rather than riding on another package's dependency graph.
+    "mcp-types~=2.2",
     "httpx~=0.28",
 ]
 
@@ -28,10 +32,12 @@ dev = [
     "pytest-asyncio~=1.4",
     "pytest-cov~=7.1",
     "hypothesis~=6.165",
-    "bandit~=1.9",
     "ruff~=0.16",
     "mypy~=2.3",
 ]
+
+[project.scripts]
+fastapi-docs-mcp = "fastapi_docs_mcp.server:run"
 
 [build-system]
 requires = ["hatchling"]
@@ -39,7 +45,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fastapi_docs_mcp"]
-force-include = { "main.py" = "main.py" }
 
 [tool.ruff]
 target-version = "py313"
@@ -51,20 +56,40 @@ select = [
     "W",      # pycodestyle warnings
     "F",      # Pyflakes
     "I",      # isort
+    "N",      # pep8-naming
+    "D",      # pydocstyle (PEP 257)
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "UP",     # pyupgrade
     "ARG",    # flake8-unused-arguments
     "SIM",    # flake8-simplify
+    "S",      # flake8-bandit (replaces the standalone bandit dependency/CI step)
+    "RUF",    # ruff-specific rules
+    "ASYNC",  # flake8-async (blocking calls in async code)
+    "PLE",    # pylint errors
+    "PLW",    # pylint warnings
+    "TID",    # flake8-tidy-imports
+    "DTZ",    # flake8-datetimez (naive datetimes)
 ]
-ignore = ["E501"]  # line length handled by formatter
+# E501 (line length) is deliberately left enabled: the formatter can't
+# rewrap comments/docstrings, so this is the only thing that catches those.
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [tool.ruff.lint.isort]
-known-first-party = ["fastapi_docs_mcp", "main"]
+known-first-party = ["fastapi_docs_mcp"]
 
 [tool.ruff.lint.per-file-ignores]
-# Pytest fixtures are passed by name for their side effects, which ARG flags.
-"tests/**" = ["ARG001", "ARG002"]
+# Pytest fixtures are passed by name for their side effects, which ARG flags;
+# `assert` is the standard pytest idiom, not a hardening concern (S101); test
+# docstrings/naming add no reader value over a descriptive function name (D).
+"tests/**" = ["ARG001", "ARG002", "S101", "D"]
+"bench/**" = ["S101", "D"]
+# The shared httpx client is a module-level, event-loop-keyed singleton by
+# design (see http.py's module docstring) -- not a case for a class wrapping
+# a single instance, so `global` is the right tool here, not a smell.
+"src/fastapi_docs_mcp/http.py" = ["PLW0603"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -83,6 +108,3 @@ addopts = "-m 'not integration'"
 markers = [
     "integration: tests that hit the live network (deselected by default)",
 ]
-
-[tool.bandit]
-# No global skips — B105 false positives are suppressed inline with # nosec B105

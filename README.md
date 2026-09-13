@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/BA35AD71-62DA-4C12-A605-21F9F48D72BA.PNG" alt="FastAPI Docs MCP Server hero" width="640">
+  <img src="docs/hero.png" alt="FastAPI Docs MCP Server hero" width="640">
 </p>
 
 ---
@@ -68,7 +68,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "fastapi-docs": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "python", "main.py"]
+      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "fastapi-docs-mcp"]
     }
   }
 }
@@ -83,7 +83,7 @@ Add to `.vscode/mcp.json` in your workspace:
   "servers": {
     "fastapi-docs": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "python", "main.py"]
+      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "fastapi-docs-mcp"]
     }
   }
 }
@@ -119,7 +119,7 @@ Then use this MCP server config:
 ### Standalone
 
 ```bash
-uv run python main.py
+uv run fastapi-docs-mcp
 ```
 
 ## Development
@@ -138,7 +138,7 @@ uv run ruff check .
 uv run ruff format .
 
 # Type check
-uv run mypy main.py
+uv run mypy src/fastapi_docs_mcp
 ```
 
 ## How It Works
@@ -153,6 +153,10 @@ The server fetches documentation directly from the official FastAPI website:
 ## Content Limits
 
 To keep responses fast and avoid overloading AI context windows, documentation content is truncated to a maximum length (currently **15,000 characters**). If a page exceeds that limit, the response ends with a truncation notice and a link to the full page.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

@@ -9,6 +9,9 @@ on:
       - opened
       - synchronize
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,18 +20,18 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Lint with ruff
         run: uv run ruff check .
@@ -37,10 +40,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Type check with mypy
-        run: uv run mypy main.py src/fastapi_docs_mcp --ignore-missing-imports
-
-      - name: Security check with bandit
-        run: uv run bandit -c pyproject.toml --quiet -r main.py src/fastapi_docs_mcp
+        run: uv run mypy src/fastapi_docs_mcp --ignore-missing-imports
 
   test:
     runs-on: ubuntu-latest
@@ -51,21 +51,32 @@ jobs:
           - "3.13"
           - "3.14"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=fastapi_docs_mcp --cov-report=term-missing --cov-fail-under=90
+        run: uv run pytest --cov=fastapi_docs_mcp --cov-report=term-missing --cov-fail-under=95
+
+  docker:
+    # Nothing else in CI builds the Dockerfile, so it can drift out of sync
+    # with the package (e.g. a new dependency, a moved entrypoint) with
+    # nothing to catch it until someone actually deploys the image.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Build Docker image
+        run: docker build .
 
   # All tests must pass for the PR to be merged
   check:
@@ -73,9 +84,10 @@ jobs:
     needs:
       - lint
       - test
+      - docker
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed
-        uses: re-actors/alls-green@release/v1
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
         with:
           jobs: ${{ toJSON(needs) }}

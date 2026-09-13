@@ -21,7 +21,7 @@ import asyncio
 import json
 import sys
 
-import main
+import fastapi_docs_mcp
 from fastapi_docs_mcp import cache
 
 # Fixed benchmark matrix: (tool_name, args). Mirrors the manual smoke tests so
@@ -42,7 +42,7 @@ def _resolve(name: str):  # type: ignore[no-untyped-def]
     FastMCP wraps tool functions in a Tool object exposing ``.fn``; fall back to
     the attribute itself if it is already a plain callable.
     """
-    obj = getattr(main, name)
+    obj = getattr(fastapi_docs_mcp, name)
     return getattr(obj, "fn", obj)
 
 

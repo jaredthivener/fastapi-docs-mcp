@@ -23,6 +23,16 @@ class TestHtml:
     def test_decode_entities(self) -> None:
         assert html.decode_html_entities("a &lt; b &amp; c") == "a < b & c"
 
+    def test_decode_entities_beyond_the_original_hand_rolled_table(self) -> None:
+        # stdlib html.unescape covers the full HTML5 entity set, not just the
+        # handful the old hand-rolled table listed.
+        assert html.decode_html_entities("&copy; caf&eacute; &#8482;") == ("© café ™")
+
+    def test_decode_entities_drops_heading_anchor_glyphs(self) -> None:
+        # &para;/&sect; are FastAPI's heading-permalink glyphs -- noise for an
+        # LLM, dropped rather than decoded to ¶/§.
+        assert html.decode_html_entities("Security&para;&sect;") == "Security"
+
     def test_extract_code_blocks(self) -> None:
         out = html.extract_code_blocks(
             "<pre><code>def hello():\n    return 1 &lt; 2</code></pre>"

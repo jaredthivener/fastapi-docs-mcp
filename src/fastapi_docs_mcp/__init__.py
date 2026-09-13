@@ -6,7 +6,8 @@ documentation. Public surface is re-exported here for convenience.
 
 from __future__ import annotations
 
-from .server import mcp, run
+from .app import mcp
+from .server import run
 from .tools import (
     compare_fastapi_approaches,
     get_fastapi_best_practices,
@@ -17,12 +18,12 @@ from .tools import (
 )
 
 __all__ = [
-    "mcp",
-    "run",
-    "get_fastapi_docs",
-    "search_fastapi_docs",
-    "list_fastapi_pages",
-    "get_fastapi_example",
     "compare_fastapi_approaches",
     "get_fastapi_best_practices",
+    "get_fastapi_docs",
+    "get_fastapi_example",
+    "list_fastapi_pages",
+    "mcp",
+    "run",
+    "search_fastapi_docs",
 ]

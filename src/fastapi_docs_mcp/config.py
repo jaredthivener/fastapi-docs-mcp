@@ -6,7 +6,13 @@ about (and adjusted) in one place.
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Final
+
+try:
+    _VERSION = version("fastapi-docs-mcp")
+except PackageNotFoundError:  # pragma: no cover - only when run unpackaged
+    _VERSION = "0.0.0"
 
 # --- Upstream sources -------------------------------------------------------
 BASE_URL: Final = "https://fastapi.tiangolo.com"
@@ -22,10 +28,16 @@ ALLOWED_HOSTS: Final[frozenset[str]] = frozenset(
 )
 
 # --- Network ----------------------------------------------------------------
-REQUEST_TIMEOUT: Final = 30.0
+# Split rather than one blanket timeout: a dead/unreachable upstream would
+# otherwise block for the full duration on connect alone, before content.py's
+# fallback (markdown -> HTML, two URL forms) ever gets a chance to move on.
+CONNECT_TIMEOUT: Final = 5.0
+READ_TIMEOUT: Final = 15.0
+WRITE_TIMEOUT: Final = 5.0
+POOL_TIMEOUT: Final = 5.0
 MAX_DOWNLOAD_BYTES: Final = 5_000_000  # hard cap on any single response body
 USER_AGENT: Final = (
-    "fastapi-docs-mcp/2.0 (+https://github.com/jaredthivener/fastapi-docs-mcp)"
+    f"fastapi-docs-mcp/{_VERSION} (+https://github.com/jaredthivener/fastapi-docs-mcp)"
 )
 
 # --- Cache ------------------------------------------------------------------

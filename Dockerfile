@@ -17,11 +17,14 @@ RUN apk add --no-cache ca-certificates
 COPY --from=ghcr.io/astral-sh/uv:0.12.4@sha256:d0a6eca6c669dc7e9c51218707b8438a3d30402733d739dcc00adb3e213e8f5c /uv /uvx /bin/
 
 COPY pyproject.toml /app/pyproject.toml
+COPY uv.lock /app/uv.lock
 COPY README.md /app/README.md
-COPY main.py /app/main.py
 COPY src /app/src
 
-RUN uv sync --no-dev
+# --locked: fail the build rather than silently re-resolving if uv.lock
+# and pyproject.toml ever drift apart (the reproducibility this image's
+# digest-pinned base and uv already aim for).
+RUN uv sync --locked --no-dev
 
 FROM python:3.14-alpine@sha256:3f818d6811ff5f3f2b5e5d836df3d25c2dd2e588d3b4981338a8ba17e422f74f
 
@@ -36,4 +39,4 @@ USER appuser
 
 COPY --from=builder /app /app
 
-CMD ["python", "main.py"]
+CMD ["fastapi-docs-mcp"]

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
+
 import pytest
 from fastmcp.exceptions import ToolError
 
-from fastapi_docs_mcp import http, tools
+from fastapi_docs_mcp import content, http, tools
 from fastapi_docs_mcp.config import SITEMAP_URL
 
 from .fixtures import FAKE_SITEMAP
@@ -103,6 +106,33 @@ class TestTools:
         out = await tools.compare_fastapi_approaches("zzzznope")
         assert "Available comparisons" in out
 
+    async def test_compare_fetches_pages_concurrently(
+        self, mock_net: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Regression test: pages must be fetched concurrently, not one at a
+        # time. "tutorial" hits the dynamic-fallback branch with 3 matching
+        # pages (see FAKE_SITEMAP); each fetch is delayed, so a sequential
+        # implementation (2 awaits/page) would take >= 6x the delay.
+        delay = 0.05
+
+        async def slow_text(path: str, max_length: int | None = None) -> str:
+            await asyncio.sleep(delay)
+            return f"# {path}\n\nSome text."
+
+        async def slow_code(path: str) -> list[str]:
+            await asyncio.sleep(delay)
+            return []
+
+        monkeypatch.setattr(content, "get_page_text", slow_text)
+        monkeypatch.setattr(content, "get_page_code", slow_code)
+
+        start = time.monotonic()
+        out = await tools.compare_fastapi_approaches("tutorial")
+        elapsed = time.monotonic() - start
+
+        assert elapsed < delay * 3
+        assert out.count("Some text") == 3
+
     async def test_best_practices(self, mock_net: None) -> None:
         out = await tools.get_fastapi_best_practices("security")
         assert "Best Practices" in out and "Security" in out
@@ -116,6 +146,25 @@ class TestTools:
     async def test_best_practices_no_match(self, mock_net: None) -> None:
         out = await tools.get_fastapi_best_practices("zzzznope")
         assert "No documentation found" in out
+
+    async def test_best_practices_fetches_pages_concurrently(
+        self, mock_net: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # "tutorial" matches 3+ pages in FAKE_SITEMAP (capped to the top 3).
+        delay = 0.05
+
+        async def slow_text(path: str, max_length: int | None = None) -> str:
+            await asyncio.sleep(delay)
+            return f"# {path}\n\nSome text."
+
+        monkeypatch.setattr(content, "get_page_text", slow_text)
+
+        start = time.monotonic()
+        out = await tools.get_fastapi_best_practices("tutorial")
+        elapsed = time.monotonic() - start
+
+        assert elapsed < delay * 3
+        assert out.count("Some text") == 3
 
     def test_clean_path(self) -> None:
         assert tools._clean_path("/tutorial/cors/") == "tutorial/cors"
