@@ -6,7 +6,13 @@ about (and adjusted) in one place.
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Final
+
+try:
+    _VERSION = version("fastapi-docs-mcp")
+except PackageNotFoundError:  # pragma: no cover - only when run unpackaged
+    _VERSION = "0.0.0"
 
 # --- Upstream sources -------------------------------------------------------
 BASE_URL: Final = "https://fastapi.tiangolo.com"
@@ -25,7 +31,7 @@ ALLOWED_HOSTS: Final[frozenset[str]] = frozenset(
 REQUEST_TIMEOUT: Final = 30.0
 MAX_DOWNLOAD_BYTES: Final = 5_000_000  # hard cap on any single response body
 USER_AGENT: Final = (
-    "fastapi-docs-mcp/2.0 (+https://github.com/jaredthivener/fastapi-docs-mcp)"
+    f"fastapi-docs-mcp/{_VERSION} (+https://github.com/jaredthivener/fastapi-docs-mcp)"
 )
 
 # --- Cache ------------------------------------------------------------------

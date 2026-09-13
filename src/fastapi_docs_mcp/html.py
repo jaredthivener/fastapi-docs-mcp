@@ -7,19 +7,13 @@ every sitemap-discoverable page reachable.
 
 from __future__ import annotations
 
+import html
 import re
 
-_HTML_ENTITIES: dict[str, str] = {
-    "&lt;": "<",
-    "&gt;": ">",
-    "&amp;": "&",
-    "&quot;": '"',
-    "&#39;": "'",
-    "&nbsp;": " ",
-    "&para;": "",
-    "&sect;": "",
-    "&apos;": "'",
-}
+# ¶/§ are FastAPI docs' heading-permalink glyphs (rendered via &para;/&sect;) --
+# real content to a browser, pure noise to an LLM reading extracted text, so
+# they're dropped rather than decoded like every other entity.
+_ANCHOR_GLYPHS_RE = re.compile("[¶§]")
 
 _TAG_RE = re.compile(r"<[a-zA-Z/!][^>]*>")
 _NONCONTENT_RE = re.compile(
@@ -37,10 +31,8 @@ _CODE_RE = re.compile(r"<code[^>]*>(.*?)</code>", flags=re.DOTALL | re.IGNORECAS
 
 
 def decode_html_entities(text: str) -> str:
-    """Decode the handful of HTML entities that appear in FastAPI docs."""
-    for entity, char in _HTML_ENTITIES.items():
-        text = text.replace(entity, char)
-    return text
+    """Decode HTML entities, dropping the ¶/§ heading-anchor glyphs."""
+    return _ANCHOR_GLYPHS_RE.sub("", html.unescape(text))
 
 
 def extract_text(html: str) -> str:
