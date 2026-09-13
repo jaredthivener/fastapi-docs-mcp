@@ -10,7 +10,7 @@
 - Use subagents liberally to keep main context window clean
 - Offload research, exploration, and parallel analysis to subagents
 - For complex problems, throw more compute at it via subagents
-- One tack per subagent for focused execution
+- One task per subagent for focused execution
 
 ## 3. Self-Improvement Loop
 - After ANY correction from the user: update `tasks/lessons.md` with the pattern
@@ -48,5 +48,5 @@
 ## Core Principles
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **No Laziness**: Find root causes. No temporary fixes. Principal developer standards.
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
