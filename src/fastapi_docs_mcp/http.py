@@ -16,9 +16,12 @@ import httpx
 from . import cache
 from .config import (
     ALLOWED_HOSTS,
+    CONNECT_TIMEOUT,
     MAX_DOWNLOAD_BYTES,
-    REQUEST_TIMEOUT,
+    POOL_TIMEOUT,
+    READ_TIMEOUT,
     USER_AGENT,
+    WRITE_TIMEOUT,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +47,12 @@ _client_loop: asyncio.AbstractEventLoop | None = None
 def _new_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
         follow_redirects=True,
-        timeout=REQUEST_TIMEOUT,
+        timeout=httpx.Timeout(
+            connect=CONNECT_TIMEOUT,
+            read=READ_TIMEOUT,
+            write=WRITE_TIMEOUT,
+            pool=POOL_TIMEOUT,
+        ),
         limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
         headers={"User-Agent": USER_AGENT},
     )

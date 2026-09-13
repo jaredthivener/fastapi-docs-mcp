@@ -28,7 +28,13 @@ ALLOWED_HOSTS: Final[frozenset[str]] = frozenset(
 )
 
 # --- Network ----------------------------------------------------------------
-REQUEST_TIMEOUT: Final = 30.0
+# Split rather than one blanket timeout: a dead/unreachable upstream would
+# otherwise block for the full duration on connect alone, before content.py's
+# fallback (markdown -> HTML, two URL forms) ever gets a chance to move on.
+CONNECT_TIMEOUT: Final = 5.0
+READ_TIMEOUT: Final = 15.0
+WRITE_TIMEOUT: Final = 5.0
+POOL_TIMEOUT: Final = 5.0
 MAX_DOWNLOAD_BYTES: Final = 5_000_000  # hard cap on any single response body
 USER_AGENT: Final = (
     f"fastapi-docs-mcp/{_VERSION} (+https://github.com/jaredthivener/fastapi-docs-mcp)"
