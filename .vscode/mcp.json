@@ -2,7 +2,7 @@
   "servers": {
     "fastapi-docs": {
       "command": "uv",
-      "args": ["run", "--directory", "${workspaceFolder}", "python", "main.py"]
+      "args": ["run", "--directory", "${workspaceFolder}", "fastapi-docs-mcp"]
     }
   }
 }

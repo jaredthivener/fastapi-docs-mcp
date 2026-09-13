@@ -37,7 +37,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Type check with mypy
-        run: uv run mypy main.py src/fastapi_docs_mcp --ignore-missing-imports
+        run: uv run mypy src/fastapi_docs_mcp --ignore-missing-imports
 
   test:
     runs-on: ubuntu-latest

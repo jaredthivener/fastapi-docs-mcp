@@ -68,7 +68,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "fastapi-docs": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "python", "main.py"]
+      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "fastapi-docs-mcp"]
     }
   }
 }
@@ -83,7 +83,7 @@ Add to `.vscode/mcp.json` in your workspace:
   "servers": {
     "fastapi-docs": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "python", "main.py"]
+      "args": ["run", "--directory", "/path/to/fastapi-docs-mcp", "fastapi-docs-mcp"]
     }
   }
 }
@@ -119,7 +119,7 @@ Then use this MCP server config:
 ### Standalone
 
 ```bash
-uv run python main.py
+uv run fastapi-docs-mcp
 ```
 
 ## Development
@@ -138,7 +138,7 @@ uv run ruff check .
 uv run ruff format .
 
 # Type check
-uv run mypy main.py
+uv run mypy src/fastapi_docs_mcp
 ```
 
 ## How It Works

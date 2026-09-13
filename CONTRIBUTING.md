@@ -6,12 +6,11 @@ Thank you for your interest in contributing! 🎉
 
 Before your PR can be merged, it must pass all automated checks:
 
-- ✅ **Linting** — `uv run ruff check .`
+- ✅ **Linting** — `uv run ruff check .` (includes security linting via ruff's `S` rules)
 - ✅ **Formatting** — `uv run ruff format --check .`
-- ✅ **Type checking** — `uv run mypy main.py`
+- ✅ **Type checking** — `uv run mypy src/fastapi_docs_mcp`
 - ✅ **Tests** — `uv run pytest` (Python 3.13 and 3.14)
 - ✅ **Security** — CodeQL analysis
-- ✅ **Security (local)** — `uv run bandit -c pyproject.toml --quiet main.py`
 
 ## Development Setup
 
@@ -26,9 +25,8 @@ uv sync --extra dev
 # Run all checks locally before pushing
 uv run ruff check .
 uv run ruff format .
-uv run mypy main.py --ignore-missing-imports
+uv run mypy src/fastapi_docs_mcp --ignore-missing-imports
 uv run pytest
-uv run bandit -c pyproject.toml --quiet main.py
 ```
 
 ## Pull Request Process

@@ -10,14 +10,14 @@ Agent configuration reference for clients connecting to this MCP server.
 |---|---|
 | Server name | `FastAPI-Docs-Expert` |
 | Protocol | MCP over stdio (transport: `stdio`) |
-| Runtime | FastMCP ≥ 3.4.2 |
-| Entrypoint | `python main.py` |
+| Runtime | FastMCP ≥ 4.0.3 |
+| Entrypoint | `fastapi-docs-mcp` (console script) |
 
 ---
 
 ## Tools
 
-All six tools are **read-only** (`readOnlyHint: true`, `openWorldHint: true`).
+All six tools are **read-only** (`read_only_hint: true`, `open_world_hint: true`).
 None write files, mutate state, or execute code on the host.
 
 ### `get_fastapi_docs(path: str) → str`

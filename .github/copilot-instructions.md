@@ -1,81 +1,98 @@
 # FastAPI Docs MCP Server — AI Agent Guide
 
 ## Project Overview
-**FastAPI Docs MCP** is a Model Context Protocol server that provides real-time access to FastAPI documentation via tools. It fetches HTML from `fastapi.tiangolo.com`, parses content, and exposes 6 tools: `get_fastapi_docs`, `search_fastapi_docs`, `list_fastapi_pages`, `get_fastapi_example`, `compare_fastapi_approaches`, and `get_fastapi_best_practices`.
+**FastAPI Docs MCP** is a Model Context Protocol server providing real-time
+access to FastAPI documentation. It exposes 6 read-only tools:
+`get_fastapi_docs`, `search_fastapi_docs`, `list_fastapi_pages`,
+`get_fastapi_example`, `compare_fastapi_approaches`, and
+`get_fastapi_best_practices` — see [AGENTS.md](../AGENTS.md) for the full
+tool contract (signatures, return shape, error semantics).
 
-The entire application is a single-file async tool server (`main.py`). Focus is on robust HTML parsing and sitemap-driven content discovery.
+The implementation is a small package under `src/fastapi_docs_mcp/`, not a
+single file. Each module is one layer:
+
+| Module | Responsibility |
+|---|---|
+| `config.py` | Every magic value (URLs, allowlist, timeouts, limits) in one place |
+| `http.py` | The single network choke point: host allowlist (enforced post-redirect), size cap, timeout |
+| `cache.py` | TTL + LRU cache with single-flight de-duplication |
+| `sitemap.py` | Discovery — the sitemap is the only source of page-path truth, plus keyword aliases |
+| `markdown.py` | Preferred content path: raw GitHub markdown, include-directive resolution, MkDocs-syntax cleanup |
+| `html.py` | Fallback-only content path: regex text/code extraction from the rendered site |
+| `content.py` | Orchestrates markdown-then-HTML fallback; the one place that distinguishes a confirmed-absent page (`None`) from an unreachable one (`ToolError`) |
+| `app.py` | The shared `FastMCP` instance, tool annotations, lifespan (closes the HTTP client) |
+| `server.py` | Logging setup, imports `tools` to register it, `run()` |
+| `tools.py` | The 6 `@mcp.tool` functions — thin orchestration + response formatting |
 
 ## Key Architecture Patterns
 
-### HTML Parsing Without External Dependencies
-- **No BeautifulSoup**: Uses `re.sub()` with regex patterns to extract text and code blocks. This is intentional to minimize dependencies.
-- **Extraction pipeline** (in `extract_text_from_html()`):
-  1. Remove non-content elements: `<script>`, `<style>`, `<nav>`, `<footer>`, `<header>`
-  2. Extract `<article>` tag content (prioritized)
-  3. Iteratively strip remaining HTML tags until stable
-  4. Decode HTML entities AFTER tag removal (critical ordering)
-  5. Clean up malformed HTML artifacts
-- **Code extraction** (in `extract_code_blocks()`): Finds `<pre><code>` blocks first, then fallback to multi-line `<code>` blocks. Always removes tags before decoding entities.
+### Markdown-preferred, HTML-fallback content
+`content.py` fetches FastAPI's raw markdown from GitHub first (token-efficient,
+preserves code fences) and only falls back to parsing the rendered HTML page
+if markdown is unavailable. This is the resilience guarantee: an upstream
+change to one source degrades gracefully instead of breaking the tool.
 
-### Sitemap-Driven Discovery
-- `fetch_sitemap()` parses `fastapi.tiangolo.com/sitemap.xml` to get all doc URLs
-- `categorize_urls()` maps paths to: `tutorial`, `advanced`, `deployment`, `how-to`, `reference`, `other`
-- Multiple tools (`search_fastapi_docs`, `get_fastapi_best_practices`) dynamically query this list—**no hardcoded doc paths** except in `get_fastapi_example()` and `compare_fastapi_approaches()` for performance
+### No HTML parsing library
+`html.py` uses `re.sub()` regex passes rather than BeautifulSoup/lxml — it is
+the fallback path only (exercised when markdown fails), kept deliberately
+lean and covered by hypothesis property tests (`tests/test_html.py`).
 
-### Keyword Aliasing
-- `search_fastapi_docs()` includes alias mappings: `auth→security`, `db→sql-databases`, `di→dependencies`, etc.
-- `get_fastapi_example()` and `compare_fastapi_approaches()` have pre-computed `topic_paths` dicts for direct lookups
-- Fallback: if no alias matches, search the sitemap directly
+### Sitemap-driven discovery
+`sitemap.fetch_sitemap()` parses the live `sitemap.xml`; nothing hardcodes a
+page inventory, so new/renamed upstream docs are found automatically.
+`KEYWORD_ALIASES` maps user vocabulary (e.g. `auth` → `security`) to terms
+that appear in sitemap URLs.
 
-### Content Truncation
-- Tools return truncated content (`MAX_CONTENT_LENGTH = 15_000`) with `... [Content truncated]` indicator
-- `truncate_content()` prefers paragraph breaks (`\n\n`) over mid-word cuts for readability
+### Single-flight cache
+Concurrent fetches for the same URL collapse into one upstream request
+(`cache.get_or_fetch`). Entries expire after `CACHE_TTL` and the cache is
+bounded by `CACHE_MAX_ENTRIES` (LRU-evicted).
+
+### Confirmed-absent vs. unreachable
+A page that genuinely doesn't exist returns `None` (handled softly, e.g. "no
+results for X"). A page that couldn't be checked at all (every source failed
+transiently) raises `fastmcp.exceptions.ToolError`. Collapsing these into one
+"not found" response would misinform the caller — don't do it when touching
+`content.py`, `http.py`, or `markdown.py`.
 
 ## Development & Testing
 
-### Testing Approach
-- **Integration tests** (`tests/test_main.py`): Test real HTTP calls to `fastapi.tiangolo.com` (uses `pytest-asyncio`)
-- **Quick validation** (`test_tools.py`): Manual script testing all 6 tools end-to-end
-- **Run tests**: `uv run pytest` (Python 3.13/3.14 only)
+- **Unit tests** (`tests/`): network fully mocked, run by default — `uv run pytest`
+- **Live tests** (`tests/test_live.py`): hit the real network, opt-in only —
+  `uv run pytest -m integration` (also run on a schedule via `canary.yml`)
+- **Property tests**: `tests/test_html.py` / `tests/test_markdown.py` use
+  `hypothesis` to fuzz the regex extraction/cleanup pipelines
 
-### Code Quality (Enforced by CI/CD)
-- **Ruff**: `uv run ruff check .` (linting) + `uv run ruff format .` (formatting)
-- **Type checking**: `uv run mypy main.py` (strict typing required)
-- **Security**: `uv run bandit -c pyproject.toml --quiet main.py` (no external SSTI exploits)
-- **Config**: Set target Python 3.13+ in `pyproject.toml` — do NOT add Python 3.12 support
+### Code Quality (enforced by CI)
+- **Ruff**: `uv run ruff check .` (includes pep8-naming, pydocstyle/PEP 257,
+  and flake8-bandit's `S` rules — there is no separate bandit dependency)
+  + `uv run ruff format --check .`
+- **Type checking**: `uv run mypy src/fastapi_docs_mcp` (`strict = true`)
+- **Coverage gate**: `--cov-fail-under=95`
+- Target Python 3.13+ — do not add 3.12 support
 
 ## Contributing Guidelines
-- All functions must have **full type hints** and **docstrings** (checked by mypy)
-- New tools must be decorated with `@mcp.tool` and return `str`
-- Test coverage is expected for new logic (see `tests/test_main.py` structure)
-- PR checklist: Run all checks locally before pushing (CONTRIBUTING.md)
+- All functions have full type hints and docstrings (mypy strict + ruff `D`)
+- New tools are decorated with `@mcp.tool(annotations=READONLY, ...)` in `tools.py`
+- Add tests alongside the module you change (`tests/test_<module>.py`)
+- PR checklist: see [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ## Common Tasks
 
 ### Adding a New Tool
-1. Create async function with `@mcp.tool` decorator, `str` return type
-2. Use `fetch_url()` for HTTP calls (includes timeout, redirect handling)
-3. Use `extract_text_from_html()` or `extract_code_blocks()` for parsing
-4. Return formatted markdown with URL reference
-5. Add tests in `tests/test_main.py`
+1. Add an `async def` in `tools.py` decorated with `@mcp.tool(annotations=READONLY, output_schema=None)`
+2. Call into `content.py`/`sitemap.py` — never `http.py` directly from a tool
+3. Format the response as markdown with a source URL
+4. Add tests in `tests/test_tools.py`
 
-### Fixing HTML Parsing Issues
-- Test HTML extraction locally: use `extract_text_from_html(html)` in REPL
-- Common problem: entity decoding order. **Always decode after removing tags**, not before
-- If regex fails, add a specific case to `extract_text_from_html()` for that element type
+### Fixing HTML/Markdown Parsing Issues
+- `html.py` and `markdown.py` each have hypothesis-based fuzz tests — run
+  them (`uv run pytest tests/test_html.py tests/test_markdown.py`) after
+  any regex change
+- In `markdown.py`, HTML entities must be decoded *after* tags are stripped
 
-### Debugging HTTP Failures
-- `fetch_url()` returns `None` on any `httpx.HTTPError`. Check timeout (30s) and URL format
-- Tools have fallback logic (e.g., `get_fastapi_docs` tries both with/without trailing slash)
-- Sitemap fetch failures gracefully return empty list — tools then suggest `list_fastapi_pages()`
-
-## Codebase Conventions
-- Async-first: All tools are `async def`, network calls use `async with httpx.AsyncClient()`
-- Constants at module top: `BASE_URL`, `SITEMAP_URL`, `REQUEST_TIMEOUT`, `MAX_CONTENT_LENGTH`
-- Error messages are user-friendly (suggest `list_fastapi_pages()` or browse docs)
-- Tools always return non-None string (no exceptions; failures are graceful)
-
-## Performance Notes
-- Sitemap is fetched fresh per tool call (not cached) — acceptable for interactive use, revisit if latency becomes issue
-- Code extraction limits results to first 5 examples to avoid token bloat
-- Best practices tool limits to first 3 pages (most relevant) to manage response size
+### Debugging Fetch Failures
+- `http.fetch()` returns `None` for a confirmed-absent/disallowed resource,
+  raises `http.UpstreamError` if the fetch couldn't be completed at all
+- `content.py`'s two-source fallback and `_fetch_live_html`'s two-URL-form
+  retry (with/without trailing slash) already cover most transient failures
