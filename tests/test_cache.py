@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 
 import pytest
@@ -69,32 +68,31 @@ class TestCache:
             await cache.get_or_fetch("err-key", fetcher)
         assert calls == 2  # not single-flighted into a cached failure
 
-    def test_expiry_cleans_locks(self) -> None:
-        # Verify that when a cache entry expires, its lock is also cleaned up
-        cache._cache["old"] = (time.monotonic() - 1_000_000, "stale")
-        cache._locks["old"] = asyncio.Lock()
-        assert "old" in cache._locks
+    async def test_get_or_fetch_does_not_leak_locks_on_miss(self) -> None:
+        # Regression test: a fetch that's never cached (confirmed-absent)
+        # must not accumulate a lock forever. Each of these keys is fetched
+        # exactly once and never cached, so this reproduces the leak fixed
+        # in get_or_fetch's finally block.
+        async def fetcher() -> str | None:
+            return None
 
-        # Access the expired entry (triggers cleanup)
-        assert cache.cache_get("old") is None
+        for i in range(500):
+            await cache.get_or_fetch(f"miss-{i}", fetcher)
+        assert cache._locks == {}
 
-        # Verify both _cache and _locks are cleaned
-        assert "old" not in cache._cache
-        assert "old" not in cache._locks
+    async def test_get_or_fetch_does_not_leak_locks_on_error(self) -> None:
+        async def fetcher() -> str | None:
+            raise RuntimeError("boom")
 
-    def test_lru_eviction_cleans_locks(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # Verify that when LRU eviction occurs, locks are also cleaned up
-        monkeypatch.setattr("fastapi_docs_mcp.cache.CACHE_MAX_ENTRIES", 3)
+        for i in range(500):
+            with pytest.raises(RuntimeError):
+                await cache.get_or_fetch(f"err-{i}", fetcher)
+        assert cache._locks == {}
 
-        # Create locks for entries
-        for i in range(5):
-            cache.cache_set(f"k{i}", str(i))
-            cache._locks[f"k{i}"] = asyncio.Lock()
+    async def test_get_or_fetch_does_not_leak_locks_on_hit(self) -> None:
+        async def fetcher() -> str | None:
+            return "value"
 
-        # Verify LRU eviction happened and locks were cleaned
-        assert len(cache._cache) == 3
-        assert "k0" not in cache._cache
-        assert "k0" not in cache._locks
-        assert "k1" not in cache._locks
-        assert "k4" in cache._cache
-        assert "k4" in cache._locks
+        for i in range(500):
+            await cache.get_or_fetch(f"hit-{i}", fetcher)
+        assert cache._locks == {}

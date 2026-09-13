@@ -28,7 +28,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Lint with ruff
         run: uv run ruff check .
@@ -62,7 +62,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Run tests with coverage
         run: uv run pytest --cov=fastapi_docs_mcp --cov-report=term-missing --cov-fail-under=90

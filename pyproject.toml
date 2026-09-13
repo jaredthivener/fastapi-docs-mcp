@@ -18,7 +18,11 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp>=3.4.7,<4.1",
+    "fastmcp>=4.0.3,<5",
+    # Imported directly in server.py (ToolAnnotations). fastmcp currently
+    # pulls this in transitively, but an import we rely on must be declared
+    # ourselves rather than riding on another package's dependency graph.
+    "mcp-types~=2.2",
     "httpx~=0.28",
 ]
 
