@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/BA35AD71-62DA-4C12-A605-21F9F48D72BA.PNG" alt="FastAPI Docs MCP Server hero" width="640">
+  <img src="docs/hero.png" alt="FastAPI Docs MCP Server hero" width="640">
 </p>
 
 ---
@@ -153,6 +153,10 @@ The server fetches documentation directly from the official FastAPI website:
 ## Content Limits
 
 To keep responses fast and avoid overloading AI context windows, documentation content is truncated to a maximum length (currently **15,000 characters**). If a page exceeds that limit, the response ends with a truncation notice and a link to the full page.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
