@@ -25,6 +25,7 @@ at them from commit messages would not be verifiable.
   `importlib.metadata` instead of a hardcoded, already-stale `"2.0"`.
 
 ### Changed
+- **Breaking:** Python 3.15 only. `requires-python` is now `>=3.15` (was `>=3.13`); CI runs a single 3.15 job, and ruff/mypy target 3.15, matching the Docker image.
 - Replaced the standalone `bandit` dependency/CI step with ruff's `S`
   (flake8-bandit) ruleset — verified equivalent (zero findings either way)
   on this codebase.

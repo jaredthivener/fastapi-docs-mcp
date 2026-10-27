@@ -69,7 +69,7 @@ transiently) raises `fastmcp.exceptions.ToolError`. Collapsing these into one
   + `uv run ruff format --check .`
 - **Type checking**: `uv run mypy src/fastapi_docs_mcp` (`strict = true`)
 - **Coverage gate**: `--cov-fail-under=95`
-- Target Python 3.13+ — do not add 3.12 support
+- Python 3.15 only (`requires-python = ">=3.15"`; CI and the Docker image also run 3.15) — do not add older-version support
 
 ## Contributing Guidelines
 - All functions have full type hints and docstrings (mypy strict + ruff `D`)
