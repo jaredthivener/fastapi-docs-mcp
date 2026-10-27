@@ -1,3 +1,15 @@
+# Project: fastapi-docs-mcp
+
+Python 3.13+ FastMCP server exposing 6 read-only FastAPI-docs tools. Token efficiency is the product.
+
+- Architecture, module map, and invariants: `.github/copilot-instructions.md` (read on demand, not imported)
+- Tool contract: `AGENTS.md`; design rationale: `docs/DESIGN.md`
+- Gate before "done" (mirrors CI): run the `/verify` skill. Edited `.py` files are auto-formatted and linted by a PostToolUse hook.
+- New tool: `/add-mcp-tool`. After touching markdown/html/response formatting: `/bench-tokens`.
+- Never edit `uv.lock` by hand (use `uv lock`/`uv add`); denied in `.claude/settings.json`.
+- Invariants: tools call `content.py`/`sitemap.py`, never `http.py`; confirmed-absent (`None`) vs unreachable (`ToolError`) must stay distinct; every URL/limit lives in `config.py`; no new HTML-parsing dependency.
+- Ground claims in evidence: cite the command output or file:line that proves a change works.
+
 # Workflow Orchestration
 
 ## 1. Plan Mode Default
