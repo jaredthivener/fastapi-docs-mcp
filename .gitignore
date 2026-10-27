@@ -31,6 +31,3 @@ htmlcov/
 # Local planning / task tracking
 tasks/
 .claude/settings.local.json
-
-# Eval run outputs (raw per-trial transcripts; regenerate with bench/eval)
-bench/eval/runs/
