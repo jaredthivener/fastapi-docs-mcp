@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import re
 from typing import TypedDict
 
 from . import content, sitemap
 from .app import READONLY, mcp
+from .concurrency import gather_all
 from .config import BASE_URL, MAX_INPUT_LENGTH
 
 
@@ -278,7 +278,7 @@ async def compare_fastapi_approaches(topic: str) -> str:
     # round trips each) at a time -- the pages are independent, and the
     # shared cache/single-flight layer means running them together costs no
     # extra upstream requests.
-    fetched = await asyncio.gather(*(_fetch_compare_page(page) for page in pages))
+    fetched = await gather_all(*(_fetch_compare_page(page) for page in pages))
     for page, (text, code_blocks) in zip(pages, fetched, strict=True):
         if not text:
             continue
@@ -295,7 +295,7 @@ async def compare_fastapi_approaches(topic: str) -> str:
 
 async def _fetch_compare_page(page: str) -> tuple[str | None, list[str]]:
     """Fetch one comparison page's text and code examples concurrently."""
-    text, code_blocks = await asyncio.gather(
+    text, code_blocks = await gather_all(
         content.get_page_text(page, max_length=3200), content.get_page_code(page)
     )
     return text, code_blocks
@@ -346,7 +346,7 @@ Use `list_fastapi_pages()` to see available topics."""
         f"*Found {len(matching)} relevant page(s)*\n\n---\n",
     ]
     top_matches = matching[:3]
-    texts = await asyncio.gather(
+    texts = await gather_all(
         *(content.get_page_text(path, max_length=3200) for path in top_matches)
     )
     for path, text in zip(top_matches, texts, strict=True):

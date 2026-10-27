@@ -25,6 +25,7 @@ at them from commit messages would not be verifiable.
   `importlib.metadata` instead of a hardcoded, already-stale `"2.0"`.
 
 ### Changed
+- Concurrent page/include fetches use `asyncio.TaskGroup` via `concurrency.gather_all` instead of `asyncio.gather`: when one fetch fails the siblings are cancelled instead of continuing to spend upstream requests. The first failure still propagates unwrapped (`ToolError`/`UpstreamError` semantics unchanged).
 - Replaced the standalone `bandit` dependency/CI step with ruff's `S`
   (flake8-bandit) ruleset — verified equivalent (zero findings either way)
   on this codebase.
