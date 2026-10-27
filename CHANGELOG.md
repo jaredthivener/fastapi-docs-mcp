@@ -9,6 +9,13 @@ at them from commit messages would not be verifiable.
 
 ## [Unreleased]
 
+### Added
+- `bench/model_eval.py`: latency/accuracy/cost eval of Haiku/Sonnet/Opus 5.5
+  with and without this server, driven by headless Claude Code (no API key
+  needed). Results and limitations in `docs/DESIGN.md` §7.
+- Claude Code project setup: `.claude/` hooks, skills (`verify`,
+  `add-mcp-tool`, `bench-tokens`) and permissions; `CLAUDE.md` project section.
+
 ### Fixed
 - Single-flight cache (`cache.py`) leaked one `asyncio.Lock` per key that was
   fetched but never cached (e.g. a confirmed-404 path) — locks were only

@@ -66,7 +66,8 @@ its job is to fetch, clean, and **token-efficiently** present documentation.
 |--------|----------------|
 | `config.py` | All constants: URLs, host allowlist, timeouts, size caps, TTLs, limits. |
 | `http.py` | Shared `httpx.AsyncClient` (pooled, keep-alive); host-allowlisted, size-capped GET; integrates cache + single-flight. The **only** place network I/O happens. |
-| `cache.py` | TTL cache with LRU bound + per-key `asyncio.Lock` (single-flight). |
+| `cache.py` | TTL cache with LRU bound + per-key `asyncio.Lock` (single-flight). Confirmed-absent (`None`) results are cached for the shorter `ABSENT_TTL`; exceptions never are. |
+| `concurrency.py` | `gather_all`: `asyncio.TaskGroup` fan-out; first failure cancels siblings and is re-raised unwrapped. |
 | `sitemap.py` | **Discovery**: fetch/parse sitemap, keyword-alias search, categorization. |
 | `markdown.py` | Path→raw-md URL resolution, `{* *}`/`{!!}` include resolution (with `ln[]` slicing), MkDocs cleanup, truncation. |
 | `html.py` | Lean HTML→text/code extractor — the resilience fallback only. |
@@ -114,6 +115,14 @@ even if the repo reorganizes or the include macro changes again.
   client per loop, reused within it.
 - Cache TTL raised to hours (docs are near-static); LRU-bounded; single-flight
   collapses concurrent misses into one upstream fetch.
+- A confirmed 404 is cached for `ABSENT_TTL` (5 min) so repeated lookups of a
+  missing page (e.g. `tutorial/security.md` in compare/best-practices) stop
+  refetching it; measured 15 → 13 upstream requests for that workload.
+- Parallel page/include fetches go through `concurrency.gather_all`
+  (`asyncio.TaskGroup`): a failure cancels the siblings instead of letting
+  them keep spending upstream requests. A sampling-profiler run showed ~84%
+  of wall time is idle on the network, so interpreter-level speedups were not
+  pursued; reducing requests is what pays.
 
 ### 5.2 Security
 - **Host allowlist** (`fastapi.tiangolo.com`, `raw.githubusercontent.com`),
@@ -148,7 +157,41 @@ test coverage ≥90%). Where a tool's raw token count rises, it must be because 
 now returns substantively more-correct content that the prior version failed to
 deliver (e.g. real code examples), documented in the token report.
 
-## 7. Alternatives considered
+## 7. Model evaluation
+
+`bench/model_eval.py` (`uv run python bench/model_eval.py [reps]`) drives
+headless Claude Code (`claude -p`, so it runs on a subscription, no API key)
+with 6 FastAPI questions, with and without this server, on the Claude 5.5
+models. Fresh process per question, so the server cache is always cold.
+Pass = the answer contains the expected substrings (3 reps → 18 trials per row).
+
+| Model | Tools | Pass | p50 latency | Max | Turns | $/question* |
+|---|---|---:|---:|---:|---:|---:|
+| Haiku 5.5 | with | 100% | 4.7 s | 11.9 s | 2.7 | 0.0010 |
+| Haiku 5.5 | without | 100% | 2.0 s | 3.7 s | 1.0 | 0.0003 |
+| Sonnet 5.5 | with | 100% | 6.0 s | 43.3 s | 2.2 | 0.0223 |
+| Sonnet 5.5 | without | 100% | 3.2 s | 8.5 s | 1.0 | 0.0068 |
+| Opus 5.5 | with | 100% | 7.6 s | 19.2 s | 2.4 | 0.0497 |
+| Opus 5.5 | without | 100% | 3.4 s | 7.6 s | 1.0 | 0.0141 |
+
+\*Claude Code's list-price estimate; not billed on a subscription.
+
+**Findings.** The set is saturated: every model passes without the tools, so it
+cannot show an accuracy benefit (18 trials/row only rules out true pass rates
+below ~82%). The tools add ~2.2–2.4× latency and ~3.4–3.7× cost (extra turns
+plus tool output). Haiku 5.5 with tools is the fastest and cheapest with equal
+measured accuracy. **Not measured:** whether the tools help where model memory
+is stale (needs version-specific questions); per-trial tool calls; the 43 s
+Sonnet outlier. Latency includes Claude Code's own overhead.
+
+**Known limitations found by the eval**
+- `search_fastapi_docs` matches single keywords only: `"cors"` and
+  `"websocket"` hit, but `"static files"`, `"background tasks"` and
+  `"request body"` return "No results" (observed live; 9/25 multi-word
+  queries hit in the eval). Callers should retry with one word.
+- `list_fastapi_pages` truncates each section ("… and N more").
+
+## 8. Alternatives considered
 
 | Option | Why not (as primary) |
 |--------|----------------------|

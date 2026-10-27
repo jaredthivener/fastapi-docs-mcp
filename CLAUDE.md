@@ -6,6 +6,7 @@ Python 3.15 FastMCP server exposing 6 read-only FastAPI-docs tools. Token effici
 - Tool contract: `AGENTS.md`; design rationale: `docs/DESIGN.md`
 - Gate before "done" (mirrors CI): run the `/verify` skill. Edited `.py` files are auto-formatted and linted by a PostToolUse hook.
 - New tool: `/add-mcp-tool`. After touching markdown/html/response formatting: `/bench-tokens`.
+- Model eval (latency/accuracy/cost; uses your Claude plan's quota): `uv run python bench/model_eval.py`. Results: `docs/DESIGN.md` §7.
 - Never edit `uv.lock` by hand (use `uv lock`/`uv add`); denied in `.claude/settings.json`.
 - Invariants: tools call `content.py`/`sitemap.py`, never `http.py`; confirmed-absent (`None`) vs unreachable (`ToolError`) must stay distinct; every URL/limit lives in `config.py`; no new HTML-parsing dependency.
 - Ground claims in evidence: cite the command output or file:line that proves a change works.
