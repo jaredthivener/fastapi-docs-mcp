@@ -25,6 +25,7 @@ at them from commit messages would not be verifiable.
   `importlib.metadata` instead of a hardcoded, already-stale `"2.0"`.
 
 ### Changed
+- Cache remembers a confirmed-absent resource (HTTP 404) for 5 minutes (`config.ABSENT_TTL`), sharing the LRU bound. Previously every call refetched it: one compare/best-practices run requested `tutorial/security.md` (a 404) 3 times. Measured 15 -> 13 upstream requests for that workload. Transient failures are still never cached.
 - Replaced the standalone `bandit` dependency/CI step with ruff's `S`
   (flake8-bandit) ruleset — verified equivalent (zero findings either way)
   on this codebase.

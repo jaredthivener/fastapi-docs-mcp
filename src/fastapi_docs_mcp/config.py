@@ -53,6 +53,10 @@ USER_AGENT: Final = (
 # cache can never grow without limit.
 CACHE_TTL: Final = 6 * 60 * 60.0  # 6 hours
 CACHE_MAX_ENTRIES: Final = 256
+# A confirmed-absent resource (404) is remembered only briefly: long enough to
+# stop one tool call refetching the same missing page, short enough that a
+# newly published page shows up quickly. Transient failures are never cached.
+ABSENT_TTL: Final = 5 * 60.0
 
 # --- Output / token budget --------------------------------------------------
 MAX_CONTENT_LENGTH: Final = 15_000
