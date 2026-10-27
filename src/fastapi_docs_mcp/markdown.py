@@ -7,11 +7,11 @@ markdown — with its ``{* docs_src/... *}`` include directives, ``///`` admonit
 
 from __future__ import annotations
 
-import asyncio
 import re
 
 from . import html as html_fallback
 from . import http
+from .concurrency import gather_all
 from .config import (
     DOCS_RAW_BASE,
     MAX_CONTENT_LENGTH,
@@ -112,7 +112,7 @@ async def resolve_includes(md: str) -> str:
         return md
 
     urls = [_include_url(ref) for _, _, ref, _ in directives]
-    codes = await asyncio.gather(*(_fetch_include(u) for u in urls))
+    codes = await gather_all(*(_fetch_include(u) for u in urls))
 
     parts: list[str] = []
     last = 0

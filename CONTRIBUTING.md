@@ -9,7 +9,7 @@ Before your PR can be merged, it must pass all automated checks:
 - ✅ **Linting** — `uv run ruff check .` (includes security linting via ruff's `S` rules)
 - ✅ **Formatting** — `uv run ruff format --check .`
 - ✅ **Type checking** — `uv run mypy src/fastapi_docs_mcp`
-- ✅ **Tests** — `uv run pytest` (Python 3.13 and 3.14)
+- ✅ **Tests** — `uv run pytest` (Python 3.15)
 - ✅ **Security** — CodeQL analysis
 
 ## Development Setup
@@ -41,7 +41,7 @@ uv run pytest
 
 ## Code Style
 
-- Python 3.13+ only
+- Python 3.15 only
 - Follow existing code patterns
 - Add type hints to all functions
 - Include docstrings for public functions
