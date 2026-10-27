@@ -190,8 +190,11 @@ results" for multi-word queries (`"static files"`, `"background tasks"`,
 queries hit). `sitemap.match_paths` now tries the phrase as a slug, then as an
 alias, then ranks pages by how many query words prefix-match a path word
 (shorter path wins ties); all five queries above now return a page. Single
-words behave as before. The eval's Haiku turn count (2.7) was not re-measured
-after the fix.
+words behave as before. Re-running the eval after the fix (same 108 trials,
+all 100% pass): tools-condition turns 2.7→2.2 (Haiku), 2.2→2.2 (Sonnet),
+2.4→2.3 (Opus); p50 4.7→4.5 s, 6.0→4.8 s, 7.6→8.0 s. One run per side with 18
+trials per row, so only the Haiku turn drop is a plausible effect; the latency
+differences are within run-to-run noise (baseline max latencies moved as much).
 
 (`list_fastapi_pages` caps only the Tutorial section, at 30 entries, by
 design: the full list costs more tokens. Other sections are listed in full.)
