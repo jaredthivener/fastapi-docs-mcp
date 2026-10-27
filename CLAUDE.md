@@ -1,6 +1,6 @@
 # Project: fastapi-docs-mcp
 
-Python 3.13+ FastMCP server exposing 6 read-only FastAPI-docs tools. Token efficiency is the product.
+Python 3.15 FastMCP server exposing 6 read-only FastAPI-docs tools. Token efficiency is the product.
 
 - Architecture, module map, and invariants: `.github/copilot-instructions.md` (read on demand, not imported)
 - Tool contract: `AGENTS.md`; design rationale: `docs/DESIGN.md`
