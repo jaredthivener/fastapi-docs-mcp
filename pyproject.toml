@@ -90,6 +90,8 @@ known-first-party = ["fastapi_docs_mcp"]
 # docstrings/naming add no reader value over a descriptive function name (D).
 "tests/**" = ["ARG001", "ARG002", "S101", "D"]
 "bench/**" = ["S101", "D"]
+# Eval questions are prose data; wrapping them would hurt readability.
+"bench/eval/cases.py" = ["E501"]
 # The shared httpx client is a module-level, event-loop-keyed singleton by
 # design (see http.py's module docstring) -- not a case for a class wrapping
 # a single instance, so `global` is the right tool here, not a smell.
