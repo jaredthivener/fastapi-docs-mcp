@@ -32,7 +32,7 @@ Fetch the full content of a single FastAPI doc page by its path slug.
 Keyword search across all sitemap URLs; returns the best-matching page's content plus up to 4 related paths.
 
 - **When to use**: the user asks about a topic without naming an exact page; always try this before `get_fastapi_docs`.
-- **Input**: a single keyword, e.g. `"cors"`, `"database"`, `"websocket"`. Aliases like `"auth"` are resolved server-side. Multi-word queries (`"static files"`, `"request body"`) often return no results: retry with one word.
+- **Input**: a keyword or short phrase, e.g. `"cors"`, `"background tasks"`, `"websocket"`. Aliases like `"auth"` are resolved server-side. Multi-word queries match a page slug first, then rank pages by how many words match.
 - **Output**: best-match page content + related-page list.
 - **Token cost** (tiktoken est.): ~1,221 output tokens.
 

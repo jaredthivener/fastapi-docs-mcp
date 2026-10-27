@@ -184,12 +184,17 @@ measured accuracy. **Not measured:** whether the tools help where model memory
 is stale (needs version-specific questions); per-trial tool calls; the 43 s
 Sonnet outlier. Latency includes Claude Code's own overhead.
 
-**Known limitations found by the eval**
-- `search_fastapi_docs` matches single keywords only: `"cors"` and
-  `"websocket"` hit, but `"static files"`, `"background tasks"` and
-  `"request body"` return "No results" (observed live; 9/25 multi-word
-  queries hit in the eval). Callers should retry with one word.
-- `list_fastapi_pages` truncates each section ("… and N more").
+**Defect found and fixed by the eval.** `search_fastapi_docs` returned "No
+results" for multi-word queries (`"static files"`, `"background tasks"`,
+`"request body"`, `"sql databases"`, `"error handling"`; 9/25 multi-word
+queries hit). `sitemap.match_paths` now tries the phrase as a slug, then as an
+alias, then ranks pages by how many query words prefix-match a path word
+(shorter path wins ties); all five queries above now return a page. Single
+words behave as before. The eval's Haiku turn count (2.7) was not re-measured
+after the fix.
+
+(`list_fastapi_pages` caps only the Tutorial section, at 30 entries, by
+design: the full list costs more tokens. Other sections are listed in full.)
 
 ## 8. Alternatives considered
 

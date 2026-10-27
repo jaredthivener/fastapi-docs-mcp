@@ -17,6 +17,10 @@ at them from commit messages would not be verifiable.
   `add-mcp-tool`, `bench-tokens`) and permissions; `CLAUDE.md` project section.
 
 ### Fixed
+- `search_fastapi_docs` returned no results for multi-word queries such as
+  "static files" or "request body" (only whole-phrase substrings and exact
+  aliases were tried). `sitemap.match_paths` now tries slug, alias, then
+  per-word ranked matching; found by `bench/model_eval.py`.
 - Single-flight cache (`cache.py`) leaked one `asyncio.Lock` per key that was
   fetched but never cached (e.g. a confirmed-404 path) — locks were only
   reaped on cache eviction/expiry, never on the fetch they guarded settling.
