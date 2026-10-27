@@ -146,7 +146,7 @@ async def search_fastapi_docs(query: str) -> str:
     Common aliases are supported (e.g. "auth" finds security pages).
 
     Args:
-        query: Search term, e.g. "cors", "database", or "websocket".
+        query: Keyword or short phrase, e.g. "cors", "background tasks".
     """
     query = _clean_arg(query)
     matching_paths = await sitemap.search_sitemap_urls(query)

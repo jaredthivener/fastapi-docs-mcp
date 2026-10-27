@@ -37,3 +37,50 @@ class TestSitemap:
         assert "tutorial/cors" in cats["tutorial"]
         assert "advanced/websockets" in cats["advanced"]
         assert "some-random-page" in cats["other"]
+
+
+class TestMatchPaths:
+    PATHS = (
+        "tutorial/body",
+        "tutorial/body-fields",
+        "tutorial/request-files",
+        "tutorial/static-files",
+        "tutorial/background-tasks",
+        "tutorial/sql-databases",
+        "tutorial/security",
+        "how-to/custom-request-and-route",
+    )
+
+    def test_single_word_unchanged(self) -> None:
+        assert sitemap.match_paths("body", self.PATHS) == [
+            "tutorial/body",
+            "tutorial/body-fields",
+        ]
+
+    def test_phrase_matches_slug(self) -> None:
+        assert sitemap.match_paths("static files", self.PATHS) == [
+            "tutorial/static-files"
+        ]
+        assert sitemap.match_paths("Background Tasks", self.PATHS) == [
+            "tutorial/background-tasks"
+        ]
+
+    def test_phrase_alias(self) -> None:
+        assert sitemap.match_paths("sql databases", self.PATHS) == [
+            "tutorial/sql-databases"
+        ]
+        assert sitemap.match_paths("auth", self.PATHS) == ["tutorial/security"]
+
+    def test_words_ranked_by_matches_then_generality(self) -> None:
+        got = sitemap.match_paths("request body", self.PATHS)
+        assert got[0] == "tutorial/body"
+        assert "tutorial/request-files" in got
+
+    def test_stopwords_ignored(self) -> None:
+        assert sitemap.match_paths("how to static", self.PATHS) == [
+            "tutorial/static-files"
+        ]
+
+    def test_no_match(self) -> None:
+        assert sitemap.match_paths("kubernetes", self.PATHS) == []
+        assert sitemap.match_paths("quantum flux", self.PATHS) == []

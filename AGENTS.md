@@ -32,7 +32,7 @@ Fetch the full content of a single FastAPI doc page by its path slug.
 Keyword search across all sitemap URLs; returns the best-matching page's content plus up to 4 related paths.
 
 - **When to use**: the user asks about a topic without naming an exact page; always try this before `get_fastapi_docs`.
-- **Input**: plain search term, e.g. `"cors"`, `"database"`, `"websocket"`. Aliases like `"auth"` are resolved server-side.
+- **Input**: a keyword or short phrase, e.g. `"cors"`, `"background tasks"`, `"websocket"`. Aliases like `"auth"` are resolved server-side. Multi-word queries match a page slug first, then rank pages by how many words match.
 - **Output**: best-match page content + related-page list.
 - **Token cost** (tiktoken est.): ~1,221 output tokens.
 
@@ -93,9 +93,11 @@ Use the cheapest model that can handle the task. These tools are read-and-relay 
 
 | Task type | Recommended model | Model ID |
 |---|---|---|
-| Single doc fetch, search, list, example | **Haiku 4.5** | `claude-haiku-4-5` |
+| Single doc fetch, search, list, example | **Haiku 5.5** | `claude-haiku-5-5` |
 | Multi-page synthesis (`best_practices`, `compare`) | **Sonnet 4.6** | `claude-sonnet-4-6` |
 | Already inside a complex coding/agent Opus session | **Opus 4.8** | `claude-opus-4-8` |
+
+Haiku 5.5 matched Sonnet 5.5 and Opus 5.5 on accuracy (100% on all three) at ~22× / ~50× lower cost per lookup question; see [docs/DESIGN.md](docs/DESIGN.md) §7. The synthesis rows were not evaluated.
 
 **Precedence rule**: if the surrounding session already runs on Opus, stay on Opus — switching mid-session breaks the prompt cache and costs more than the downgrade saves. Otherwise, start at Haiku and step up only if the synthesis task requires it.
 

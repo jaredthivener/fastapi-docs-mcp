@@ -15,7 +15,8 @@ single file. Each module is one layer:
 |---|---|
 | `config.py` | Every magic value (URLs, allowlist, timeouts, limits) in one place |
 | `http.py` | The single network choke point: host allowlist (enforced post-redirect), size cap, timeout |
-| `cache.py` | TTL + LRU cache with single-flight de-duplication |
+| `cache.py` | TTL + LRU cache with single-flight de-duplication; also remembers confirmed-absent (404) for `ABSENT_TTL` |
+| `concurrency.py` | `gather_all`: `asyncio.TaskGroup` fan-out that cancels siblings on first failure and re-raises it unwrapped (use instead of `asyncio.gather`) |
 | `sitemap.py` | Discovery — the sitemap is the only source of page-path truth, plus keyword aliases |
 | `markdown.py` | Preferred content path: raw GitHub markdown, include-directive resolution, MkDocs-syntax cleanup |
 | `html.py` | Fallback-only content path: regex text/code extraction from the rendered site |
@@ -46,7 +47,9 @@ that appear in sitemap URLs.
 ### Single-flight cache
 Concurrent fetches for the same URL collapse into one upstream request
 (`cache.get_or_fetch`). Entries expire after `CACHE_TTL` and the cache is
-bounded by `CACHE_MAX_ENTRIES` (LRU-evicted).
+bounded by `CACHE_MAX_ENTRIES` (LRU-evicted). A confirmed-absent result
+(`None`) is cached for the shorter `ABSENT_TTL`; exceptions (unreachable
+upstream) are never cached.
 
 ### Confirmed-absent vs. unreachable
 A page that genuinely doesn't exist returns `None` (handled softly, e.g. "no
