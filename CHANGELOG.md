@@ -26,6 +26,7 @@ at them from commit messages would not be verifiable.
 
 ### Changed
 - Concurrent page/include fetches use `asyncio.TaskGroup` via `concurrency.gather_all` instead of `asyncio.gather`: when one fetch fails the siblings are cancelled instead of continuing to spend upstream requests. The first failure still propagates unwrapped (`ToolError`/`UpstreamError` semantics unchanged).
+- **Breaking:** Python 3.15 only. `requires-python` is now `>=3.15` (was `>=3.13`); CI runs a single 3.15 job, and ruff/mypy target 3.15, matching the Docker image.
 - Replaced the standalone `bandit` dependency/CI step with ruff's `S`
   (flake8-bandit) ruleset — verified equivalent (zero findings either way)
   on this codebase.
