@@ -128,6 +128,7 @@ The server maintains an in-process TTL + LRU cache. Agents do not need to manage
 | Max entries | 256 |
 | Eviction policy | LRU |
 | Single-flight | yes — concurrent identical fetches coalesce |
+| Confirmed-absent (404) TTL | 5 minutes (transient failures are never cached) |
 | Cache scope | per server process (not shared across restarts) |
 
 A cold first call to `get_fastapi_docs` fetches live markdown from GitHub (~30 s timeout, 5 MB body cap). Subsequent calls to the same path within 6 hours return instantly from cache.

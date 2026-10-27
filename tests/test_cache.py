@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 
 import pytest
 
 from fastapi_docs_mcp import cache
+from fastapi_docs_mcp.config import ABSENT_TTL
 
 
 class TestCache:
@@ -43,12 +45,38 @@ class TestCache:
         assert a == b == "value"
         assert calls == 1
 
-    async def test_get_or_fetch_does_not_cache_none(self) -> None:
+    async def test_get_or_fetch_caches_confirmed_absence(self) -> None:
+        calls = 0
+
         async def fetcher() -> str | None:
+            nonlocal calls
+            calls += 1
             return None
 
         assert await cache.get_or_fetch("none-key", fetcher) is None
-        assert "none-key" not in cache._cache
+        assert await cache.get_or_fetch("none-key", fetcher) is None
+        assert calls == 1
+
+    async def test_concurrent_misses_on_absent_key_fetch_once(self) -> None:
+        calls = 0
+
+        async def fetcher() -> str | None:
+            nonlocal calls
+            calls += 1
+            await asyncio.sleep(0.01)
+            return None
+
+        await asyncio.gather(*(cache.get_or_fetch("gone", fetcher) for _ in range(5)))
+        assert calls == 1
+
+    async def test_absence_expires_on_the_short_ttl(self) -> None:
+        # Older than ABSENT_TTL but far younger than CACHE_TTL: only a cached
+        # absence expires here, a cached value of the same age would not.
+        age = time.monotonic() - (ABSENT_TTL + 1)
+        cache._cache["gone"] = (age, None)
+        cache._cache["here"] = (age, "page")
+        assert cache._lookup("gone") == (False, None)
+        assert cache._lookup("here") == (True, "page")
 
     async def test_get_or_fetch_does_not_cache_exception(self) -> None:
         # A failed fetch (e.g. http.UpstreamError) must not be cached — a
