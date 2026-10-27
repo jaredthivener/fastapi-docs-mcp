@@ -1,7 +1,7 @@
 # Base image pinned by digest (not just tag) so a build is reproducible and
 # dependabot's "docker" ecosystem can track/bump the pin like every other
 # dependency in this repo (uv.lock, github-actions).
-FROM python:3.14-alpine@sha256:3f818d6811ff5f3f2b5e5d836df3d25c2dd2e588d3b4981338a8ba17e422f74f AS builder
+FROM python:3.15-alpine@sha256:0aa144e9ec2ae8fd80dfd94070ef3e432a0df17b6e5e0091dc05323974ce9913 AS builder
 
 ENV UV_SYSTEM_PYTHON=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -26,7 +26,7 @@ COPY src /app/src
 # digest-pinned base and uv already aim for).
 RUN uv sync --locked --no-dev
 
-FROM python:3.14-alpine@sha256:3f818d6811ff5f3f2b5e5d836df3d25c2dd2e588d3b4981338a8ba17e422f74f
+FROM python:3.15-alpine@sha256:0aa144e9ec2ae8fd80dfd94070ef3e432a0df17b6e5e0091dc05323974ce9913
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
