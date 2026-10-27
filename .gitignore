@@ -30,3 +30,4 @@ htmlcov/
 
 # Local planning / task tracking
 tasks/
+.claude/settings.local.json
