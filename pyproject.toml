@@ -112,3 +112,22 @@ addopts = "-m 'not integration'"
 markers = [
     "integration: tests that hit the live network (deselected by default)",
 ]
+
+# Mutation testing is opt-in and NOT a dependency: run it with the
+# `mutation-test` skill (`uv run --with mutmut mutmut run`). Scope is the two
+# modules whose branches encode the confirmed-absent-vs-unreachable invariant.
+# The Hypothesis suites (test_html/test_markdown) are left out of the selection:
+# mutmut re-runs tests in one process, which trips Hypothesis's
+# `differing_executors` health check.
+[tool.mutmut]
+source_paths = [
+    "src/fastapi_docs_mcp/content.py",
+    "src/fastapi_docs_mcp/sitemap.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_content.py",
+    "tests/test_sitemap.py",
+    "tests/test_tools.py",
+]
+# mutmut copies only the mutated files; the rest of the package must come along.
+also_copy = ["src/"]
