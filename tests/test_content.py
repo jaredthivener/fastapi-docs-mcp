@@ -13,8 +13,10 @@ from __future__ import annotations
 import pytest
 from fastmcp.exceptions import ToolError
 
-from fastapi_docs_mcp import content, http
+from fastapi_docs_mcp import content, http, markdown
 from fastapi_docs_mcp.config import BASE_URL, DOCS_RAW_BASE
+
+_TRUNCATED = markdown.TRUNCATION_NOTE
 
 
 def _is_markdown_url(url: str) -> bool:
@@ -64,8 +66,58 @@ class TestGetPageText:
     async def test_both_sources_unreachable_raises_tool_error(
         self, unreachable_net: None
     ) -> None:
-        with pytest.raises(ToolError):
+        # The message must name the page so the caller knows what failed.
+        with pytest.raises(ToolError, match="tutorial/cors"):
             await content.get_page_text("tutorial/cors")
+
+    async def test_max_length_truncates_markdown_path(self, mock_net: None) -> None:
+        full = await content.get_page_text("tutorial/cors")
+        short = await content.get_page_text("tutorial/cors", max_length=40)
+        assert full is not None and short is not None
+        assert _TRUNCATED not in full
+        assert short.endswith(_TRUNCATED)
+        assert len(short.removesuffix(_TRUNCATED)) <= 40
+
+    async def test_max_length_truncates_html_fallback(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fetch(url: str) -> str | None:
+            if _is_html_url(url):
+                return f"<article><p>{'word ' * 100}</p></article>"
+            return None
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        out = await content.get_page_text("tutorial/cors", max_length=40)
+        assert out is not None and out.endswith(_TRUNCATED)
+        assert len(out.removesuffix(_TRUNCATED)) <= 40
+
+    async def test_html_path_is_normalised_and_slash_form_tried_first(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[str] = []
+
+        async def fetch(url: str) -> str | None:
+            if _is_html_url(url):
+                seen.append(url)
+            return None
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        assert await content.get_page_text("  /tutorial/cors/  ") is None
+        assert seen == [f"{BASE_URL}/tutorial/cors/", f"{BASE_URL}/tutorial/cors"]
+
+    async def test_html_retries_without_trailing_slash_after_transient_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fetch(url: str) -> str | None:
+            if url == f"{BASE_URL}/tutorial/cors/":
+                raise http.UpstreamError("simulated timeout")
+            if url == f"{BASE_URL}/tutorial/cors":
+                return "<article><p>Second URL form</p></article>"
+            return None  # markdown confirmed absent
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        out = await content.get_page_text("tutorial/cors")
+        assert out is not None and "Second URL form" in out
 
     async def test_markdown_confirmed_absent_html_unreachable_returns_none(
         self, monkeypatch: pytest.MonkeyPatch
@@ -119,5 +171,27 @@ class TestGetPageCode:
     async def test_both_sources_unreachable_raises_tool_error(
         self, unreachable_net: None
     ) -> None:
-        with pytest.raises(ToolError):
+        with pytest.raises(ToolError, match="tutorial/cors"):
             await content.get_page_code("tutorial/cors")
+
+    async def test_markdown_unreachable_html_confirmed_absent_returns_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fetch(url: str) -> str | None:
+            if _is_markdown_url(url):
+                raise http.UpstreamError("simulated timeout")
+            return None  # HTML confirms absence
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        assert await content.get_page_code("tutorial/cors") == []
+
+    async def test_markdown_confirmed_absent_html_unreachable_returns_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fetch(url: str) -> str | None:
+            if _is_html_url(url):
+                raise http.UpstreamError("simulated timeout")
+            return None  # markdown confirms absence
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        assert await content.get_page_code("tutorial/cors") == []

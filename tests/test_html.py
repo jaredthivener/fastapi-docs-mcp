@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from fastapi_docs_mcp import html
+from fastapi_docs_mcp.config import BARE_CODE_MIN_CHARS, MIN_CODE_BLOCK_CHARS
+
+
+def _multiline(n: int) -> str:
+    """A two-line code string of exactly ``n`` chars (``n`` >= 3)."""
+    return "a\n" + "b" * (n - 2)
 
 
 class TestHtml:
@@ -39,6 +46,63 @@ class TestHtml:
         )
         assert out and "def hello" in out[0]
         assert "<" in out[0]
+
+    def test_extract_code_blocks_keeps_long_bare_code_only(self) -> None:
+        # A bare <code> (no <pre>) is kept only if it is multi-line AND longer
+        # than 50 chars; inline snippets like <code>pip</code> are prose.
+        long_block = "\n".join(f"value_{i} = {i}" for i in range(8))
+        assert len(long_block) > 50
+        out = html.extract_code_blocks(
+            f"<p>Run <code>pip</code> then:</p><code>{long_block}</code>"
+        )
+        assert out == [long_block]
+
+    @pytest.mark.parametrize(
+        ("block", "kept"),
+        [
+            pytest.param(_multiline(BARE_CODE_MIN_CHARS), False, id="at-minimum"),
+            pytest.param(_multiline(BARE_CODE_MIN_CHARS + 1), True, id="one-over"),
+            pytest.param("b" * (BARE_CODE_MIN_CHARS + 10), False, id="long-one-liner"),
+            pytest.param(
+                _multiline(MIN_CODE_BLOCK_CHARS + 1), False, id="short-multiline"
+            ),
+        ],
+    )
+    def test_extract_code_blocks_bare_code_filter(self, block: str, kept: bool) -> None:
+        out = html.extract_code_blocks(f"<code>{block}</code>")
+        assert out == ([block] if kept else [])
+
+    @pytest.mark.parametrize(
+        ("length", "kept"),
+        [(MIN_CODE_BLOCK_CHARS, False), (MIN_CODE_BLOCK_CHARS + 1, True)],
+        ids=["at-minimum-dropped", "one-over-kept"],
+    )
+    def test_extract_code_blocks_minimum_length(self, length: int, kept: bool) -> None:
+        block = "c" * length
+        out = html.extract_code_blocks(f"<pre><code>{block}</code></pre>")
+        assert out == ([block] if kept else [])
+
+    def test_extract_code_blocks_does_not_duplicate_pre_code_blocks(self) -> None:
+        # Regression: a multi-line pre/code block over BARE_CODE_MIN_CHARS used
+        # to match both _PRE_CODE_RE and the bare-<code> pass, and come back twice.
+        block = _multiline(BARE_CODE_MIN_CHARS + 10)
+        assert html.extract_code_blocks(f"<pre><code>{block}</code></pre>") == [block]
+
+    def test_extract_code_blocks_pre_blocks_then_bare_blocks_in_order(self) -> None:
+        # A page with both kinds yields each exactly once, <pre> blocks first.
+        pre = _multiline(BARE_CODE_MIN_CHARS + 10).replace("a\n", "p\n", 1)
+        bare = _multiline(BARE_CODE_MIN_CHARS + 20)
+        out = html.extract_code_blocks(
+            f"<code>{bare}</code><pre><code>{pre}</code></pre>"
+        )
+        assert out == [pre, bare]
+
+    def test_extract_code_blocks_strips_highlighting_tags(self) -> None:
+        lines = [f"line{i} = {i}" for i in range(5)]
+        marked_up = "\n".join(f"<span>{ln}</span>" for ln in lines)
+        assert html.extract_code_blocks(f"<code>{marked_up}</code>") == [
+            "\n".join(lines)
+        ]
 
 
 # --------------------------------------------------------------------------- #

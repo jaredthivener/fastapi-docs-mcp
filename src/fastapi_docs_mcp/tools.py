@@ -8,7 +8,7 @@ from typing import TypedDict
 from . import content, sitemap
 from .app import READONLY, mcp
 from .concurrency import gather_all
-from .config import BASE_URL, MAX_INPUT_LENGTH
+from .config import BASE_URL, MAX_INPUT_LENGTH, SUMMARY_LIMIT
 
 
 class _Comparison(TypedDict):
@@ -97,7 +97,7 @@ def _first_heading(md: str, default: str) -> str:
     return m.group(1).strip() if m else default
 
 
-def _summary(md: str, limit: int = 220) -> str:
+def _summary(md: str, limit: int = SUMMARY_LIMIT) -> str:
     """First prose paragraph, code/headings removed, capped to ~limit chars."""
     text = re.sub(r"```.*?```", "", md, flags=re.DOTALL)
     text = _HEADING_RE.sub("", text).strip()

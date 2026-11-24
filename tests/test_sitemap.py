@@ -38,6 +38,28 @@ class TestSitemap:
         assert "advanced/websockets" in cats["advanced"]
         assert "some-random-page" in cats["other"]
 
+    def test_categorize_every_bucket(self) -> None:
+        cats = sitemap.categorize_urls(
+            [
+                f"{BASE_URL}/tutorial/cors/",
+                f"{BASE_URL}/advanced/websockets/",
+                f"{BASE_URL}/deployment/docker/",
+                f"{BASE_URL}/how-to/graphql/",
+                f"{BASE_URL}/reference/fastapi/",
+                f"{BASE_URL}/reference/",  # a section index, not just its children
+                f"{BASE_URL}/some-random-page/",
+                f"{BASE_URL}/",  # the site root belongs to no bucket
+            ]
+        )
+        assert cats == {
+            "tutorial": ["tutorial/cors"],
+            "advanced": ["advanced/websockets"],
+            "deployment": ["deployment/docker"],
+            "how-to": ["how-to/graphql"],
+            "reference": ["reference/fastapi", "reference"],
+            "other": ["some-random-page"],
+        }
+
 
 class TestMatchPaths:
     PATHS = (
@@ -48,6 +70,8 @@ class TestMatchPaths:
         "tutorial/background-tasks",
         "tutorial/sql-databases",
         "tutorial/security",
+        "tutorial/first-steps",
+        "tutorial/dependencies",
         "how-to/custom-request-and-route",
     )
 
@@ -70,6 +94,29 @@ class TestMatchPaths:
             "tutorial/sql-databases"
         ]
         assert sitemap.match_paths("auth", self.PATHS) == ["tutorial/security"]
+
+    def test_multiword_alias_phrase(self) -> None:
+        # Aliases keyed by a phrase ("getting started") are looked up by the
+        # raw query; the hyphenated slug ("getting-started") is not a key.
+        assert sitemap.match_paths("getting started", self.PATHS) == [
+            "tutorial/first-steps"
+        ]
+        assert sitemap.match_paths("dependency injection", self.PATHS) == [
+            "tutorial/dependencies"
+        ]
+
+    def test_per_word_alias(self) -> None:
+        # Neither phrase nor slug matches, so each word is aliased on its own:
+        # "oauth" -> "security". "guide" has no alias and matches nothing.
+        assert sitemap.match_paths("oauth guide", self.PATHS) == ["tutorial/security"]
+
+    def test_more_word_matches_outrank_generality(self) -> None:
+        # custom-request-and-route matches both words, request-files only one;
+        # the longer path must still win because match count sorts first.
+        assert sitemap.match_paths("request route", self.PATHS) == [
+            "how-to/custom-request-and-route",
+            "tutorial/request-files",
+        ]
 
     def test_words_ranked_by_matches_then_generality(self) -> None:
         got = sitemap.match_paths("request body", self.PATHS)

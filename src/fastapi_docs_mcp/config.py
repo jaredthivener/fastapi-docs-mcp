@@ -60,6 +60,16 @@ ABSENT_TTL: Final = 5 * 60.0
 
 # --- Output / token budget --------------------------------------------------
 MAX_CONTENT_LENGTH: Final = 15_000
+# truncate_content prefers cutting at a paragraph break, but only one that
+# falls past this fraction of the budget -- an earlier break would throw away
+# too much of what the caller asked for.
+TRUNCATE_BREAK_RATIO: Final = 0.8
+# Code snippets of this many chars or fewer aren't useful examples (extractors
+# drop them), and a bare multi-line <code> must exceed BARE_CODE_MIN_CHARS to
+# be treated as a block rather than inline prose.
+MIN_CODE_BLOCK_CHARS: Final = 20
+BARE_CODE_MIN_CHARS: Final = 50
+SUMMARY_LIMIT: Final = 220  # compare view: per-page summary cap, in chars
 
 # --- Input validation -------------------------------------------------------
 MAX_INPUT_LENGTH: Final = 256

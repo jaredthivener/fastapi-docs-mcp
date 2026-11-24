@@ -10,6 +10,8 @@ from __future__ import annotations
 import html
 import re
 
+from .config import BARE_CODE_MIN_CHARS, MIN_CODE_BLOCK_CHARS
+
 # ¶/§ are FastAPI docs' heading-permalink glyphs (rendered via &para;/&sect;) --
 # real content to a browser, pure noise to an LLM reading extracted text, so
 # they're dropped rather than decoded like every other entity.
@@ -58,13 +60,15 @@ def extract_text(html: str) -> str:
 def extract_code_blocks(html: str) -> list[str]:
     """Extract code snippets from an HTML page."""
     blocks: list[str] = list(_PRE_CODE_RE.findall(html))
-    for match in _CODE_RE.findall(html):
-        if "\n" in match and len(match) > 50:
+    # Scan for bare <code> only outside the <pre><code> blocks already taken --
+    # _CODE_RE would otherwise match each of those a second time.
+    for match in _CODE_RE.findall(_PRE_CODE_RE.sub("", html)):
+        if "\n" in match and len(match) > BARE_CODE_MIN_CHARS:
             blocks.append(match)
 
     cleaned: list[str] = []
     for raw_block in blocks:
         block = decode_html_entities(_TAG_RE.sub("", raw_block)).strip()
-        if len(block) > 20:
+        if len(block) > MIN_CODE_BLOCK_CHARS:
             cleaned.append(block)
     return cleaned
