@@ -10,9 +10,21 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from fastapi_docs_mcp import http, markdown
-from fastapi_docs_mcp.config import DOCS_RAW_BASE, MAX_INCLUDES, REPO_RAW_ROOT
+from fastapi_docs_mcp.config import (
+    DOCS_RAW_BASE,
+    MAX_INCLUDES,
+    MIN_CODE_BLOCK_CHARS,
+    REPO_RAW_ROOT,
+    TRUNCATE_BREAK_RATIO,
+)
 
 from .fixtures import FAKE_CORS_MD
+
+# truncate_content scenarios are expressed relative to the configured ratio, so
+# retuning it moves the cases with it instead of silently invalidating them.
+_MAX = 100
+_EDGE = int(_MAX * TRUNCATE_BREAK_RATIO)  # a break here is NOT past the threshold
+_PAST = _EDGE + 5  # a break here is
 
 
 class TestMarkdown:
@@ -82,6 +94,37 @@ class TestMarkdown:
         out = await markdown.resolve_includes("{* ../../docs_src/x/y.py *}")
         assert "unavailable" in out
 
+    async def test_resolve_includes_skips_fetch_for_non_docs_src_ref(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # A ref with no docs_src/ anchor can't be mapped to a raw URL, so it
+        # degrades to the placeholder without touching the network.
+        calls: list[str] = []
+
+        async def fetch(url: str) -> str | None:
+            calls.append(url)
+            return None
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        out = await markdown.resolve_includes("{* ../../elsewhere/y.py *}")
+        assert "(example unavailable: ../../elsewhere/y.py)" in out
+        assert calls == []
+
+    async def test_resolve_includes_keeps_surrounding_text_and_indentation(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fetch(url: str) -> str | None:
+            if url == f"{REPO_RAW_ROOT}/docs_src/x/y.py":
+                return "def f():\n    return 1\n"
+            return None
+
+        monkeypatch.setattr(http, "fetch", fetch)
+        md = "Intro\n\n{* ../../docs_src/x/y.py ln[2:2] *}\n\nOutro"
+        out = await markdown.resolve_includes(md)
+        # Text either side survives intact, and the sliced line keeps its
+        # leading indentation (it is code: stripping it would change meaning).
+        assert out == "Intro\n\n```python\n    return 1\n```\n\nOutro"
+
     async def test_resolve_includes_noop(self) -> None:
         assert await markdown.resolve_includes("plain text") == "plain text"
 
@@ -115,10 +158,52 @@ class TestMarkdown:
         out = markdown.truncate_content("A" * 200, 100)
         assert "truncated" in out.lower()
 
-    def test_truncate_paragraph_break(self) -> None:
-        text = "First para.\n\n" + "B" * 50 + "\n\nThird."
-        out = markdown.truncate_content(text, 80)
-        assert out.startswith("First para.")
+    @pytest.mark.parametrize(
+        ("text", "kept"),
+        [
+            pytest.param(
+                "A" * _PAST + "\n\n" + "B" * 50,
+                "A" * _PAST,
+                id="break-past-threshold-backs-up-to-it",
+            ),
+            pytest.param(
+                "A" * 10 + "\n\n" + "B" * 200,
+                ("A" * 10 + "\n\n" + "B" * 200)[:_MAX],
+                id="early-break-ignored",
+            ),
+            pytest.param(
+                "A" * 10 + "\n\n" + "B" * (_PAST - 12) + "\n\n" + "C" * 50,
+                ("A" * 10 + "\n\n" + "B" * (_PAST - 12) + "\n\n" + "C" * 50)[:_PAST],
+                id="last-break-wins",
+            ),
+            pytest.param(
+                "A" * _EDGE + "\n\n" + "B" * 50,
+                ("A" * _EDGE + "\n\n" + "B" * 50)[:_MAX],
+                id="break-exactly-at-threshold-ignored",
+            ),
+        ],
+    )
+    def test_truncate_cut_point(self, text: str, kept: str) -> None:
+        assert markdown.truncate_content(text, _MAX) == kept + markdown.TRUNCATION_NOTE
+
+    def test_truncate_content_exactly_at_limit_is_untouched(self) -> None:
+        assert markdown.truncate_content("A" * _MAX, _MAX) == "A" * _MAX
+
+    @pytest.mark.parametrize(
+        ("length", "kept"),
+        [(MIN_CODE_BLOCK_CHARS, False), (MIN_CODE_BLOCK_CHARS + 1, True)],
+        ids=["at-minimum-dropped", "one-over-kept"],
+    )
+    def test_extract_python_blocks_minimum_length(
+        self, length: int, kept: bool
+    ) -> None:
+        code = "c" * length
+        out = markdown.extract_python_blocks(f"```python\n{code}\n```")
+        assert out == ([code] if kept else [])
+
+    def test_extract_python_blocks_strips_html_tags(self) -> None:
+        md = "```python\n<span>x_value = 1</span>\ny_value = 2\n```"
+        assert markdown.extract_python_blocks(md) == ["x_value = 1\ny_value = 2"]
 
     async def test_to_clean_markdown(self, mock_net: None) -> None:
         out = await markdown.to_clean_markdown("tutorial/cors")

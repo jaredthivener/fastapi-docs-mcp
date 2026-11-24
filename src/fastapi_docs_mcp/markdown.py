@@ -8,6 +8,7 @@ markdown — with its ``{* docs_src/... *}`` include directives, ``///`` admonit
 from __future__ import annotations
 
 import re
+from typing import Final
 
 from . import html as html_fallback
 from . import http
@@ -16,8 +17,12 @@ from .config import (
     DOCS_RAW_BASE,
     MAX_CONTENT_LENGTH,
     MAX_INCLUDES,
+    MIN_CODE_BLOCK_CHARS,
     REPO_RAW_ROOT,
+    TRUNCATE_BREAK_RATIO,
 )
+
+TRUNCATION_NOTE: Final = "\n\n... [Content truncated. Visit the URL for full content.]"
 
 # --- Directive / syntax patterns -------------------------------------------
 _INCLUDE_RE = re.compile(
@@ -240,7 +245,7 @@ def extract_python_blocks(md: str) -> list[str]:
     for kind, content in _split_blocks(md):
         if kind in _PY_LANGS:
             code = _HTML_TAG_RE.sub("", content).strip()
-            if len(code) > 20:
+            if len(code) > MIN_CODE_BLOCK_CHARS:
                 blocks.append(code)
     return blocks
 
@@ -252,9 +257,9 @@ def truncate_content(content: str, max_length: int = MAX_CONTENT_LENGTH) -> str:
 
     truncated = content[:max_length]
     last_break = truncated.rfind("\n\n")
-    if last_break > max_length * 0.8:
+    if last_break > max_length * TRUNCATE_BREAK_RATIO:
         truncated = truncated[:last_break]
-    return f"{truncated}\n\n... [Content truncated. Visit the URL for full content.]"
+    return f"{truncated}{TRUNCATION_NOTE}"
 
 
 # --- High-level orchestration ----------------------------------------------

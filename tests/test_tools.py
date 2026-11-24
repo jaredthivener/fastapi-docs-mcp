@@ -8,8 +8,8 @@ import time
 import pytest
 from fastmcp.exceptions import ToolError
 
-from fastapi_docs_mcp import content, http, tools
-from fastapi_docs_mcp.config import SITEMAP_URL
+from fastapi_docs_mcp import content, http, sitemap, tools
+from fastapi_docs_mcp.config import BASE_URL, SITEMAP_URL, SUMMARY_LIMIT
 
 from .fixtures import FAKE_SITEMAP
 
@@ -193,6 +193,108 @@ class TestTools:
         cleaned = tools._clean_path(injected)
         assert "\r" not in cleaned
         assert "\n" not in cleaned
+
+    def test_summary_caps_long_text_on_a_word_boundary(self) -> None:
+        # text[:50] is 8 whole words plus a cut-off "al"; the partial word goes.
+        out = tools._summary("alpha " * 100, limit=50)
+        assert out == " ".join(["alpha"] * 8) + "..."
+
+    @pytest.mark.parametrize(
+        ("length", "expected"),
+        [
+            pytest.param(SUMMARY_LIMIT, "a" * SUMMARY_LIMIT, id="at-limit-untouched"),
+            pytest.param(
+                SUMMARY_LIMIT + 1, "a" * SUMMARY_LIMIT + "...", id="one-over-capped"
+            ),
+        ],
+    )
+    def test_summary_default_limit(self, length: int, expected: str) -> None:
+        assert tools._summary("a" * length) == expected
+
+    def test_summary_drops_headings_and_multiline_code_fences(self) -> None:
+        md = "# Title\n\n```python\nx = 1\ny = 2\n```\nShort body."
+        assert tools._summary(md) == "Short body."
+
+    async def test_search_lists_up_to_four_related_pages(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        paths = [f"tutorial/page-{i}" for i in range(7)]
+
+        async def search(_query: str) -> list[str]:
+            return paths
+
+        async def text(_path: str, max_length: int | None = None) -> str:
+            return "Body text."
+
+        monkeypatch.setattr(sitemap, "search_sitemap_urls", search)
+        monkeypatch.setattr(content, "get_page_text", text)
+        out = await tools.search_fastapi_docs("page")
+        related = out.split("**Related pages:**")[1]
+        # The best match is the page itself; the next four (1..4) are related.
+        assert [f"`{p}`" in related for p in paths] == [
+            False,
+            True,
+            True,
+            True,
+            True,
+            False,
+            False,
+        ]
+
+    async def test_list_pages_truncates_long_tutorial_section(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def urls() -> list[str]:
+            return [f"{BASE_URL}/tutorial/p{i:02d}/" for i in range(33)]
+
+        monkeypatch.setattr(sitemap, "fetch_sitemap", urls)
+        out = await tools.list_fastapi_pages()
+        assert out.count("- `tutorial/") == 30
+        assert "- `tutorial/p29`" in out and "- `tutorial/p30`" not in out
+        assert "- ... and 3 more" in out
+        assert "**Total pages**: 33" in out
+
+    async def test_example_caps_at_five_and_counts_the_rest(
+        self, mock_net: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def code(_path: str) -> list[str]:
+            return [f"example_{i} = {i}" for i in range(7)]
+
+        monkeypatch.setattr(content, "get_page_code", code)
+        out = await tools.get_fastapi_example("cors")
+        assert "### Example 5" in out and "### Example 6" not in out
+        assert "example_4 = 4" in out and "example_5" not in out
+        assert "*... and 2 more examples in the docs.*" in out
+
+    async def test_compare_skips_page_with_no_text(
+        self, mock_net: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # "tutorial" falls back to the first three sitemap matches
+        # (first-steps, cors, security); cors comes back empty and is omitted.
+        async def text(path: str, max_length: int | None = None) -> str | None:
+            return None if path == "tutorial/cors" else f"# {path}\n\nBody."
+
+        async def code(_path: str) -> list[str]:
+            return []
+
+        monkeypatch.setattr(content, "get_page_text", text)
+        monkeypatch.setattr(content, "get_page_code", code)
+        out = await tools.compare_fastapi_approaches("tutorial")
+        assert "### tutorial/first-steps" in out and "### tutorial/security" in out
+        assert "tutorial/cors" not in out
+
+    async def test_best_practices_skips_page_with_no_text(
+        self, mock_net: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Of the four tutorial pages the top three are fetched; cors is empty.
+        async def text(path: str, max_length: int | None = None) -> str | None:
+            return None if path == "tutorial/cors" else f"# {path}\n\nBody."
+
+        monkeypatch.setattr(content, "get_page_text", text)
+        out = await tools.get_fastapi_best_practices("tutorial")
+        assert "### tutorial/first-steps" in out and "### tutorial/security" in out
+        assert f"**URL**: {BASE_URL}/tutorial/cors/" not in out
+        assert "**More pages:** `tutorial/sql-databases`" in out
 
     def test_cap_code(self) -> None:
         capped = tools._cap_code("\n".join(str(i) for i in range(40)), max_lines=5)

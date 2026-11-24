@@ -31,3 +31,6 @@ htmlcov/
 # Local planning / task tracking
 tasks/
 .claude/settings.local.json
+
+# mutmut output (mutation-test skill)
+mutants/

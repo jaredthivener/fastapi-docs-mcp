@@ -13,10 +13,21 @@ at them from commit messages would not be verifiable.
 - `bench/model_eval.py`: latency/accuracy/cost eval of Haiku/Sonnet/Opus 5.5
   with and without this server, driven by headless Claude Code (no API key
   needed). Results and limitations in `docs/DESIGN.md` §7.
+- Opt-in mutation testing: `/mutation-test` skill and `[tool.mutmut]` config
+  (mutmut on `content.py`/`sitemap.py`, run via `uv run --with mutmut`, so it is
+  not a dependency and not part of the CI gate). Baseline 165/173 mutants killed;
+  the 8 survivors are documented as equivalent in the skill.
+- Tests that assert behavior the coverage gate could not see: the
+  `content.py` markdown/HTML fallback and `ToolError` split, `sitemap.match_paths`
+  ranking and aliases, truncation cut points, and the `tools.py` "N more" /
+  related-pages / skipped-page paths. Line coverage 98.4% -> 100%.
 - Claude Code project setup: `.claude/` hooks, skills (`verify`,
   `add-mcp-tool`, `bench-tokens`) and permissions; `CLAUDE.md` project section.
 
 ### Fixed
+- `html.extract_code_blocks` returned every multi-line `<pre><code>` block over
+  50 chars twice (matched by both the `<pre>` and bare-`<code>` passes), so the
+  HTML fallback behind `get_fastapi_example` emitted duplicate examples.
 - `search_fastapi_docs` returned no results for multi-word queries such as
   "static files" or "request body" (only whole-phrase substrings and exact
   aliases were tried). `sitemap.match_paths` now tries slug, alias, then
@@ -36,6 +47,10 @@ at them from commit messages would not be verifiable.
   `importlib.metadata` instead of a hardcoded, already-stale `"2.0"`.
 
 ### Changed
+- Truncation/extraction thresholds moved into `config.py`
+  (`TRUNCATE_BREAK_RATIO`, `MIN_CODE_BLOCK_CHARS`, `BARE_CODE_MIN_CHARS`,
+  `SUMMARY_LIMIT`) and the truncation note exported as
+  `markdown.TRUNCATION_NOTE`. Values are unchanged; behavior is identical.
 - Cache remembers a confirmed-absent resource (HTTP 404) for 5 minutes (`config.ABSENT_TTL`), sharing the LRU bound. Previously every call refetched it: one compare/best-practices run requested `tutorial/security.md` (a 404) 3 times. Measured 15 -> 13 upstream requests for that workload. Transient failures are still never cached.
 - Concurrent page/include fetches use `asyncio.TaskGroup` via `concurrency.gather_all` instead of `asyncio.gather`: when one fetch fails the siblings are cancelled instead of continuing to spend upstream requests. The first failure still propagates unwrapped (`ToolError`/`UpstreamError` semantics unchanged).
 - **Breaking:** Python 3.15 only. `requires-python` is now `>=3.15` (was `>=3.13`); CI runs a single 3.15 job, and ruff/mypy target 3.15, matching the Docker image.
